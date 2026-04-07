@@ -1,224 +1,186 @@
-# Luma Voice Agent
+# Lumi — AI Voice Assistant for Luma Event Discovery
 
-A voice-first AI agent that discovers and registers you for Luma events — entirely hands-free. Speak to find events matching your interests, hear a curated list read back to you, and register with a single voice command. Preferences are remembered across sessions via mem0.
-
----
-
-## What it does
-
-1. Greets you via ElevenLabs voice
-2. Captures your email by voice and links your Luma account
-3. Fetches upcoming Luma events filtered by your stored preferences (mem0)
-4. Reads out a short list of relevant events with one-line descriptions
-5. Lets you register for any event by saying its name or number
-6. Checks your existing Luma calendar for scheduling conflicts before registering
-7. Confirms the registration by voice, then updates your preference memory for next time
+Lumi is a voice-first AI assistant that helps you discover and register for [Luma](https://lu.ma) events — entirely hands-free. Speak to find events matching your interests, hear a curated list read back to you, and register with a single voice command.
 
 ---
 
-## Architecture overview
+## Architecture Overview
+
+Lumi runs as three separate processes:
 
 ```
-User voice
+User speaks
     │
     ▼
-ElevenLabs Conversational AI  ──►  STT + TTS (real-time)
+Next.js Frontend (LiveKit client)
+    │  WebRTC audio
+    ▼
+LiveKit Cloud
     │
     ▼
-Agent (Python / FastAPI)
-    ├── Luma API          → fetch events, check registrations, register
-    ├── mem0              → read/write user preferences across sessions
-    └── ElevenLabs SDK    → stream voice responses
+Voice Agent (LiveKit Agents framework)
+    ├── Deepgram STT       → speech-to-text
+    ├── Silero VAD         → voice activity detection
+    ├── OpenAI GPT-4o-mini → LLM for conversation
+    ├── OpenAI TTS         → text-to-speech
+    ├── LumaClient         → Apify actor for event data
+    └── mem0               → user preference memory
+    │
+    ▼  (LiveKit data channel)
+Frontend sidebar renders events
 ```
 
----
-
-## Tech stack
-
-| Layer | Tool | Notes |
+| Layer | Technology | Purpose |
 |---|---|---|
-| Voice | ElevenLabs Conversational AI | STT + TTS in one SDK |
-| Agent backend | Python + FastAPI | handles webhooks from ElevenLabs |
-| Event data | Luma API | `/event/list`, `/event/register` |
-| Memory | mem0 | cloud-hosted, per-user preference storage |
-| Email normalization | custom util | parses spoken emails ("at" → `@`) |
+| Voice pipeline | [LiveKit Agents](https://docs.livekit.io/agents/) | Real-time STT → LLM → TTS orchestration |
+| Speech-to-text | [Deepgram](https://deepgram.com/) | Transcribes user speech |
+| Voice activity | [Silero VAD](https://github.com/snakers4/silero-vad) | Detects when the user is speaking |
+| LLM | OpenAI GPT-4o-mini | Conversational reasoning and tool calls |
+| Text-to-speech | OpenAI TTS | Generates voice responses |
+| Event data | [Apify](https://apify.com/) (`matyascimbulka/luma-event-scraper`) | Scrapes public Luma events by category and city |
+| Memory | [mem0](https://mem0.ai/) | Stores per-user preference signals across sessions |
+| Backend | FastAPI | Generates LiveKit access tokens for the frontend |
+| Frontend | Next.js + `livekit-client` | Orb UI, event sidebar, email modal |
+
+---
+
+## Project Structure
+
+```
+luma-agent/
+├── main.py                     # FastAPI server (LiveKit token generation)
+├── agent/
+│   ├── voice_agent.py          # LiveKit voice agent (LumiAgent class, tools)
+│   ├── luma.py                 # LumaClient — Apify actor wrapper for events
+│   ├── conversation.py         # Conversation state placeholder
+│   └── memory.py               # mem0 wrapper for user preferences
+├── prompts/
+│   └── system_prompt.txt       # LLM system instructions for the voice agent
+├── frontend/
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── page.tsx        # Main page: orb, LiveKit room, event rendering
+│   │   │   ├── layout.tsx      # Root layout
+│   │   │   └── globals.css     # Global styles (Tailwind)
+│   │   ├── components/
+│   │   │   ├── EventList.tsx   # Event sidebar list
+│   │   │   ├── VoiceAgent.tsx  # Voice agent UI component
+│   │   │   ├── CalendarView.tsx
+│   │   │   ├── ConversationPanel.tsx
+│   │   │   └── RegistrationModal.tsx
+│   │   └── lib/
+│   │       └── api.ts          # API client (token fetch)
+│   └── package.json
+├── .env.example                # Environment variable template
+├── requirements.txt            # Python dependencies
+└── README.md
+```
 
 ---
 
 ## Prerequisites
 
 - Python 3.11+
-- A [Luma API key](https://lu.ma/developers) (server-side key, not per-user OAuth)
-- An [ElevenLabs](https://elevenlabs.io) account with Conversational AI enabled
-- A [mem0](https://app.mem0.ai) account and API key
-- `ngrok` or equivalent for local webhook tunneling during development
+- Node.js 18+
+- A [LiveKit Cloud](https://cloud.livekit.io/) project (or self-hosted LiveKit server)
+- An [OpenAI](https://platform.openai.com/) API key
+- A [Deepgram](https://deepgram.com/) API key
+- An [Apify](https://apify.com/) API token
+- (Optional) A [mem0](https://app.mem0.ai/) API key for cross-session preference memory
 
 ---
 
-## Project structure
+## Environment Variables
 
-```
-luma-voice-agent/
-├── main.py                  # FastAPI app, ElevenLabs webhook handler
-├── agent/
-│   ├── conversation.py      # Turn logic, intent parsing, state machine
-│   ├── luma.py              # Luma API wrapper (fetch, register, conflict check)
-│   ├── memory.py            # mem0 read/write helpers
-│   └── email_parser.py      # Normalizes spoken email strings
-├── prompts/
-│   └── system_prompt.txt    # ElevenLabs agent system prompt
-├── .env.example
-├── requirements.txt
-└── README.md
-```
+Copy `.env.example` to `.env` and fill in your values:
+
+| Variable | Description |
+|---|---|
+| `LIVEKIT_URL` | Your LiveKit server URL (e.g., `wss://your-project.livekit.cloud`) |
+| `LIVEKIT_API_KEY` | LiveKit API key from your project dashboard |
+| `LIVEKIT_API_SECRET` | LiveKit API secret from your project dashboard |
+| `OPENAI_API_KEY` | OpenAI API key — used for GPT-4o-mini (LLM) and TTS |
+| `DEEPGRAM_API_KEY` | Deepgram API key — used for speech-to-text |
+| `APIFY_API_TOKEN` | Apify API token — used to run the Luma event scraper actor |
+| `LUMA_EVENT_CATEGORIES` | Comma-separated event categories to search (e.g., `ai,tech,crypto`) |
+| `LUMA_CITIES` | Comma-separated city names to search (e.g., `San Francisco,New York`) |
+| `MEM0_API_KEY` | (Optional) mem0 API key for user preference memory |
 
 ---
 
 ## Setup
 
-### 1. Clone and install
+### 1. Clone and install Python dependencies
 
 ```bash
-git clone https://github.com/your-username/luma-voice-agent.git
-cd luma-voice-agent
+git clone https://github.com/your-username/luma-agent.git
+cd luma-agent
 python -m venv venv
 source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 2. Configure environment variables
+### 2. Install frontend dependencies
+
+```bash
+cd frontend
+npm install
+cd ..
+```
+
+### 3. Configure environment
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env`:
+Edit `.env` and fill in all required values (see [Environment Variables](#environment-variables) above).
 
-```env
-ELEVENLABS_API_KEY=your_elevenlabs_api_key
-ELEVENLABS_AGENT_ID=your_agent_id          # created in ElevenLabs dashboard
-LUMA_API_KEY=your_luma_api_key
-MEM0_API_KEY=your_mem0_api_key
-```
+---
 
-### 3. Set up your ElevenLabs agent
+## Running
 
-1. Go to [elevenlabs.io](https://elevenlabs.io) → **Conversational AI** → **Create Agent**
-2. Paste the contents of `prompts/system_prompt.txt` as the system prompt
-3. Set the **webhook URL** to `https://your-tunnel-url/webhook` (see step 5)
-4. Copy the **Agent ID** into your `.env`
+You need **three separate terminals**:
 
-The system prompt instructs the agent to:
-- Welcome the user with one sentence
-- Ask for their email and read it back for confirmation
-- Use tool calls to fetch events, check conflicts, and register
-
-### 4. Configure mem0
-
-Log into [app.mem0.ai](https://app.mem0.ai) and copy your API key into `.env`. mem0 will automatically create a memory namespace per user ID (derived from their email). No additional setup is required — the agent writes preference signals after each registration automatically.
-
-What gets stored in mem0:
-- Event categories the user registers for (e.g., "AI", "Web3", "Design")
-- Preferred times (weekday evening, weekend morning)
-- Hosts or communities the user has attended before
-- Any explicit preferences stated in conversation ("I prefer free events")
-
-### 5. Run the server locally
+### Terminal 1 — FastAPI backend (token server)
 
 ```bash
-# Terminal 1: start the FastAPI server
-uvicorn main:app --reload --port 8000
-
-# Terminal 2: expose it via ngrok
-ngrok http 8000
+source venv/bin/activate        # Windows: venv\Scripts\activate
+uvicorn main:app --host 127.0.0.1 --port 8000
 ```
 
-Copy the ngrok HTTPS URL and paste it into your ElevenLabs agent webhook settings as `https://<ngrok-url>/webhook`.
+### Terminal 2 — Voice agent
 
-### 6. Test the flow
-
-Open the ElevenLabs agent test interface or call it directly. The expected conversation:
-
+```bash
+source venv/bin/activate        # Windows: venv\Scripts\activate
+python agent/voice_agent.py start
 ```
-Agent:  "Hey! I'm your Luma event assistant. What's your email address?"
-User:   "shivoham at gmail dot com"
-Agent:  "Got it — shivoham@gmail.com. Is that right?"
-User:   "Yes"
-Agent:  "Found your Luma account. Pulling up events for you..."
-Agent:  "Here are 3 events coming up this week based on your interests:
-          1. AGI House Founders Dinner — Tuesday 7pm, networking + demos
-          2. AI Safety Reading Group — Wednesday 6pm, paper discussion
-          3. SF DeFi Builders Meetup — Friday 8pm, open building session
-         Which one would you like to join?"
-User:   "Register me for the first one"
-Agent:  "You're already free that evening. Signing you up for AGI House
-         Founders Dinner on Tuesday at 7pm — shall I confirm?"
-User:   "Yes"
-Agent:  "Done! You're registered. See you Tuesday."
+
+### Terminal 3 — Next.js frontend
+
+```bash
+cd frontend
+npm run dev
 ```
 
 ---
 
-## Key implementation notes for AI coding tools
+## Usage
 
-When building this with Cursor, Claude Code, or Windsurf, give the tool this context upfront:
-
-**Email parsing** — spoken emails need normalization before any API call. The util in `agent/email_parser.py` should handle: "at" → `@`, "dot" → `.`, "underscore" → `_`, "dash" → `-`, and strip spaces. Always read the parsed email back to the user and wait for explicit confirmation before proceeding.
-
-**State machine** — the conversation has distinct states: `AWAIT_EMAIL`, `AWAIT_EMAIL_CONFIRM`, `AWAIT_PICK`, `AWAIT_CONFIRM`, `DONE`. Track state per session ID (ElevenLabs provides a `conversation_id`). Do not rely on the LLM to remember state across turns — store it server-side in a dict or Redis.
-
-**Conflict check** — call `GET /user/calendar` with the user's email to get their existing Luma registrations, then compare event start/end times before registering. If there's an overlap, warn the user but offer to register anyway (they may want both).
-
-**mem0 writes** — after a successful registration, extract signals from the event metadata and write them as natural language memories:
-
-```python
-mem0_client.add(
-    messages=[{"role": "user", "content": f"I registered for {event_name}, a {category} event on {date}"}],
-    user_id=user_email
-)
-```
-
-**mem0 reads** — at the event-fetch step, retrieve the user's memories and inject them into the Luma API filter or into the LLM prompt to rank/filter results:
-
-```python
-memories = mem0_client.search(query="what events does this user like", user_id=user_email)
-```
-
-**ElevenLabs tool calls** — define `fetch_events`, `check_conflict`, and `register_event` as tools in your ElevenLabs agent config. The agent will call these via webhook; your FastAPI server handles each and returns structured JSON responses.
-
-**Never register without confirmation** — always read the event name, date, and time back to the user and require an explicit "yes" before calling the registration endpoint.
+1. Open [http://localhost:3000](http://localhost:3000) in your browser
+2. Click the **orb** to start a voice session
+3. Lumi will greet you and ask for your email (entered via a modal)
+4. After submitting your email, Lumi fetches upcoming events and reads them to you
+5. Pick an event by name or number — Lumi checks for conflicts and confirms
+6. Confirm registration and Lumi provides the event link in the sidebar
 
 ---
 
-## requirements.txt
+## How It Works
 
-```
-fastapi>=0.111.0
-uvicorn[standard]>=0.29.0
-elevenlabs>=1.2.0
-mem0ai>=0.1.0
-httpx>=0.27.0
-python-dotenv>=1.0.0
-pydantic>=2.7.0
-```
-
----
-
-## Environment variable reference
-
-| Variable | Where to get it |
-|---|---|
-| `ELEVENLABS_API_KEY` | elevenlabs.io → Profile → API Keys |
-| `ELEVENLABS_AGENT_ID` | ElevenLabs → Conversational AI → your agent |
-| `LUMA_API_KEY` | lu.ma → Settings → Developers |
-| `MEM0_API_KEY` | app.mem0.ai → API Keys |
-
----
-
-## Extending this project
-
-- **Broader event discovery** — swap the Luma API fetch for an Apify actor to scrape public Luma event pages beyond the user's own calendar. Useful for discovering events from orgs the user doesn't follow yet.
-- **Richer preference signals** — after the session, run a post-processing step that extracts implicit signals (events the user skipped, time of day they tend to ask, topics mentioned in passing) and writes them to mem0.
-- **Multi-event registration** — extend the pick intent parser to handle "register me for 1 and 3" in one turn.
-- **Web UI companion** — show a minimal card UI alongside the voice agent so users can see the event list rendered visually while hearing it read aloud.
-
+1. The **frontend** requests a LiveKit access token from the FastAPI backend (`POST /token`)
+2. The frontend connects to the **LiveKit Cloud** room using the token
+3. The **voice agent** joins the same room and begins the conversation
+4. User speech is transcribed by **Deepgram STT**, processed by **GPT-4o-mini**, and responses are spoken via **OpenAI TTS**
+5. The agent uses **function tools** to fetch events (via **Apify**), check conflicts, and trigger registration
+6. Event data is sent to the frontend via **LiveKit data channels** and rendered in the sidebar
