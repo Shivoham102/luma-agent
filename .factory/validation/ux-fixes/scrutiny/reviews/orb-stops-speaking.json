@@ -1,0 +1,28 @@
+{
+  "featureId": "orb-stops-speaking",
+  "reviewedAt": "2026-04-07T07:07:58.826026Z",
+  "commitId": "2c0d781",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The commit correctly adds orb-tap interruption and preserves mic toggle behavior, but it fails the requirement that future agent audio should still play after interruption.",
+    "issues": [
+      {
+        "file": "frontend/src/app/page.tsx",
+        "line": 118,
+        "severity": "blocking",
+        "description": "Orb tap calls `audioRef.current?.pause()` while speaking, but there is no corresponding resume (`play()`) path unless a new `TrackSubscribed` event occurs. `play()` is only called in the subscription handler (lines 64-69). If the same subscribed audio track is reused for subsequent utterances (typical LiveKit behavior), the audio element remains paused and later agent speech stays silent, violating expected behavior that future audio playback continues after interrupt."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "Mission AGENTS.md contains an off-limits rule forbidding edits to LiveKit audio playback code in `page.tsx`, but this feature explicitly requires modifying that area. Shared guidance is internally inconsistent and can mislead workers.",
+      "evidence": "C:\\Users\\shivo\\.factory\\missions\\af9a24ff-840a-4aac-9bc0-44a47301dd8f\\AGENTS.md:10-11 vs C:\\Users\\shivo\\.factory\\missions\\af9a24ff-840a-4aac-9bc0-44a47301dd8f\\features.json:156-157"
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Review failed with one blocking issue: the interrupt implementation pauses remote audio but does not ensure playback resumes for subsequent utterances on the same subscribed track."
+}

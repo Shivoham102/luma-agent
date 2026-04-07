@@ -1,0 +1,21 @@
+{
+  "featureId": "no-event-listing-speech",
+  "reviewedAt": "2026-04-07T07:08:17.008285+00:00",
+  "commitId": "0fa4aed4513e526e613ee0909259e9ef16770997",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The commit is tightly scoped to prompts/system_prompt.txt and implements the requested behavior: do not narrate event lists aloud, direct users to the sidebar, and only reference event names on request. No regressions or correctness issues were found within this feature scope.",
+    "issues": []
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "There is a shell-command convention mismatch on Windows: examples commonly use `&&`, but this session required retries using PowerShell-compatible separators.",
+      "evidence": "worker-transcripts.jsonl entry for session f77cc7c6-87e0-4242-823e-c2490f0e74b1 shows `cd C:\\Users\\shivo\\Projects\\luma-agent && git log --oneline -20` followed by a retry with `;`. `.factory/services.yaml` also defines command strings like `cd frontend && npm install`."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Review result: pass. Feature no-event-listing-speech correctly updates the system prompt to stop verbal event listing and direct users to the sidebar, with no blocking or non-blocking code issues identified."
+}
