@@ -112,12 +112,19 @@ export default function Home() {
     } else if (phase === "connected") {
       const room = roomRef.current;
       if (!room) return;
+
+      // If the agent is currently speaking, immediately silence its audio
+      if (agentSpeaking) {
+        audioRef.current?.pause();
+      }
+
+      // Toggle mic mute
       const currentMicEnabled =
         room.localParticipant.isMicrophoneEnabled;
       await room.localParticipant.setMicrophoneEnabled(!currentMicEnabled);
       setIsMuted(currentMicEnabled);
     }
-  }, [phase, connectToRoom]);
+  }, [phase, agentSpeaking, connectToRoom]);
 
   const endSession = useCallback(() => {
     roomRef.current?.disconnect();
