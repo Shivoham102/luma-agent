@@ -36,6 +36,13 @@ export default function Home() {
     };
   }, []);
 
+  // Resume audio element when agent starts speaking again after an orb-tap pause
+  useEffect(() => {
+    if (agentSpeaking && audioRef.current) {
+      audioRef.current.play().catch(() => {});
+    }
+  }, [agentSpeaking]);
+
   const connectToRoom = useCallback(async () => {
     if (phase !== "idle") return;
     setPhase("connecting");
