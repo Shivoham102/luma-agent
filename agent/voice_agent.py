@@ -95,14 +95,14 @@ class LumiAgent(Agent):
         )
 
     async def on_enter(self):
-        # First: greet the user. Do NOT call any tools in this step.
+        # First: greet the user briefly. Do NOT call any tools in this step.
         await self.session.generate_reply(
-            instructions="Greet the user warmly. Say something like: 'Hi there! Welcome! I'm Lumi, your Luma event assistant. I can help you discover and register for upcoming events.' Do NOT call any tools yet.",
+            instructions="Say exactly: 'Hi! I'm Lumi, your Luma event assistant. Let me get your email to get started.' Do NOT call any tools.",
             allow_interruptions=False,
         )
         # Second: after greeting finishes, call request_user_email to show the modal.
         self.session.generate_reply(
-            instructions="Now call the request_user_email tool to show the email input modal. Tell the user you're pulling up an email form so you can get started.",
+            instructions="Call request_user_email now.",
         )
 
 
