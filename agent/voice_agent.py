@@ -133,7 +133,7 @@ async def entrypoint(ctx: JobContext):
                     user_emails[ctx.room.name] = email
                     logger.info(f"Received email from user: {email}")
                     session.generate_reply(
-                        instructions=f"The user has entered their email: {email}. Acknowledge this briefly and then call fetch_events to show them upcoming events.",
+                        instructions="The user has submitted their email. Call fetch_events now to show them upcoming events.",
                     )
             except Exception as e:
                 logger.error(f"Error processing data from user: {e}")
