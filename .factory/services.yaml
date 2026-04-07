@@ -1,0 +1,26 @@
+commands:
+  install_python: venv\Scripts\pip.exe install -r requirements.txt
+  install_frontend: cd frontend && npm install
+  typecheck_frontend: cd frontend && npx tsc --noEmit
+
+services:
+  fastapi:
+    start: venv\Scripts\python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000
+    stop: for /f "tokens=5" %a in ('netstat -ano ^| findstr :8000 ^| findstr LISTENING') do taskkill /PID %a /F
+    healthcheck: curl -sf http://localhost:8000/token -X POST -H "Content-Type: application/json" -d "{}"
+    port: 8000
+    depends_on: []
+
+  frontend:
+    start: cd frontend && npm run dev -- --port 3000
+    stop: for /f "tokens=5" %a in ('netstat -ano ^| findstr :3000 ^| findstr LISTENING') do taskkill /PID %a /F
+    healthcheck: curl -sf http://localhost:3000
+    port: 3000
+    depends_on: []
+
+  voice_agent:
+    start: venv\Scripts\python.exe agent/voice_agent.py start
+    stop: taskkill /F /IM python.exe /FI "WINDOWTITLE eq voice_agent*"
+    healthcheck: echo "Voice agent connects outbound to LiveKit Cloud - no local healthcheck"
+    port: 0
+    depends_on: [fastapi]
