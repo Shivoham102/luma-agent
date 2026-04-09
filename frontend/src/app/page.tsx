@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
 import {
   Room,
   RoomEvent,
@@ -10,12 +11,27 @@ import {
   ConnectionState,
 } from "livekit-client";
 import type { LumaEvent } from "@/lib/api";
+import { getToken, logout } from "@/lib/api";
+
+function subscribeToToken(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
+function getTokenSnapshot(): boolean {
+  return !!localStorage.getItem("token");
+}
+
+function getTokenServerSnapshot(): boolean {
+  return false;
+}
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 type Phase = "idle" | "connecting" | "connected";
 
 export default function Home() {
+  const router = useRouter();
   const [phase, setPhase] = useState<Phase>("idle");
   const [events, setEvents] = useState<LumaEvent[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -23,12 +39,20 @@ export default function Home() {
   const [email, setEmail] = useState("");
   const [agentSpeaking, setAgentSpeaking] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const authenticated = useSyncExternalStore(subscribeToToken, getTokenSnapshot, getTokenServerSnapshot);
   const [requestedEvents, setRequestedEvents] = useState<Set<string>>(
     new Set()
   );
 
   const roomRef = useRef<Room | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Route protection: redirect to /login if no JWT token
+  useEffect(() => {
+    if (!getToken()) {
+      router.replace("/login");
+    }
+  }, [router]);
 
   useEffect(() => {
     return () => {
@@ -47,9 +71,13 @@ export default function Home() {
     if (phase !== "idle") return;
     setPhase("connecting");
     try {
+      const token = getToken();
       const res = await fetch(`${API_BASE}/token`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({}),
       });
       const { serverUrl, participantToken } = await res.json();
@@ -154,8 +182,24 @@ export default function Home() {
     setShowEmailModal(false);
   }, [email]);
 
+  if (!authenticated) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-[#0a0a0a]">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-600 border-t-blue-500" />
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex h-screen w-screen overflow-hidden bg-[#0a0a0a]">
+      {/* Logout button */}
+      <button
+        onClick={logout}
+        className="absolute left-4 top-4 z-40 rounded-lg border border-zinc-700 bg-zinc-800/80 px-3 py-1.5 text-xs font-medium text-zinc-400 transition-colors hover:border-zinc-500 hover:text-zinc-200"
+      >
+        Logout
+      </button>
+
       {/* Main agent area */}
       <div
         className={`flex flex-1 flex-col items-center justify-center transition-all duration-300 ${
