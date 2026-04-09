@@ -34,5 +34,5 @@ Environment variables, external dependencies, and setup notes.
 ## Encryption
 
 - User passwords: bcrypt hashing
-- Luma passwords: Fernet symmetric encryption (key derived from JWT_SECRET_KEY or separate ENCRYPTION_KEY)
+- Luma passwords: Fernet symmetric encryption (uses `FERNET_KEY` when provided; otherwise derives a deterministic key from `JWT_SECRET_KEY` for dev fallback)
 - JWT tokens: python-jose with HS256 algorithm

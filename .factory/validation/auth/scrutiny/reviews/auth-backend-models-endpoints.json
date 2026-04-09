@@ -1,0 +1,44 @@
+{
+  "featureId": "auth-backend-models-endpoints",
+  "reviewedAt": "2026-04-09T00:58:40.245884Z",
+  "commitId": "5f447e5",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The feature substantially implements the requested auth model/endpoints and tests, but it introduces a blocking JWT security flaw and one test-quality issue.",
+    "issues": [
+      {
+        "file": "agent/auth.py",
+        "line": 21,
+        "severity": "blocking",
+        "description": "JWT signing falls back to a known default secret (`change-me-in-production`) when `JWT_SECRET_KEY` is missing. That makes token forgery trivial in misconfigured environments and undermines the requirement to use env-provided signing secrets."
+      },
+      {
+        "file": "tests/conftest.py",
+        "line": 16,
+        "severity": "non_blocking",
+        "description": "Fixture comment says tests use an in-memory DB, but `TEST_DATABASE_URL` is file-backed (`sqlite:///./test_luma_agent.db`). This mismatch caused persistent test artifacts and can mislead future maintainers about isolation guarantees."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "Mission AGENTS guidance requires async FastAPI endpoints, but new auth endpoints were implemented as sync `def` handlers.",
+      "evidence": "C:\\Users\\shivo\\.factory\\missions\\8f439666-48e5-4b72-a1e1-56c84448708e\\AGENTS.md (\"Use async/await for all FastAPI endpoints\") vs agent/auth.py lines 188, 218, 231 (`def signup`, `def login`, `def me`)."
+    },
+    {
+      "area": "skills",
+      "observation": "The fullstack-worker skill mandates writing tests first (TDD), but the transcript shows implementation files created/edited before test files were created.",
+      "evidence": "Skill procedure step 3 in .factory/skills/fullstack-worker/SKILL.md requires tests first; transcript skeleton for session 23a4a2c9-d13c-497d-a253-53e901724e3a shows requirements/.env edits and creation of `agent/database.py` and `agent/auth.py` before creating `tests/conftest.py` and `tests/test_auth.py`."
+    },
+    {
+      "area": "knowledge",
+      "observation": "Encryption key naming is inconsistent between shared docs and implementation.",
+      "evidence": ".factory/library/environment.md says Luma password encryption can use separate `ENCRYPTION_KEY`, while agent/auth.py reads `FERNET_KEY` (line 28)."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Reviewed feature auth-backend-models-endpoints for worker session 23a4a2c9-d13c-497d-a253-53e901724e3a at commit 5f447e5. Auth functionality and test coverage are broadly present, but the JWT default-secret fallback is a blocking security issue, so the review result is fail."
+}
