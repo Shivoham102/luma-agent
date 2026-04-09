@@ -47,12 +47,13 @@ export default function Home() {
   const roomRef = useRef<Room | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Route protection: redirect to /login if no JWT token
+  // Route protection: redirect to /login if no JWT token.
+  // Re-runs whenever `authenticated` changes (e.g. token removed from localStorage).
   useEffect(() => {
-    if (!getToken()) {
+    if (!authenticated) {
       router.replace("/login");
     }
-  }, [router]);
+  }, [authenticated, router]);
 
   useEffect(() => {
     return () => {
@@ -80,6 +81,14 @@ export default function Home() {
         },
         body: JSON.stringify({}),
       });
+      if (!res.ok) {
+        // Token rejected (expired, invalid, etc.) — clear auth and redirect.
+        if (res.status === 401) {
+          logout();
+          return;
+        }
+        throw new Error(`/token request failed with status ${res.status}`);
+      }
       const { serverUrl, participantToken } = await res.json();
 
       const room = new Room();

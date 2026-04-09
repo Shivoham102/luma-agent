@@ -6,6 +6,11 @@ import sys
 # Ensure the project root is on sys.path so ``import agent`` works.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Set environment variables BEFORE importing any application modules so that
+# agent/auth.py doesn't raise a RuntimeError for missing JWT_SECRET_KEY.
+os.environ.setdefault("TESTING", "1")
+os.environ.setdefault("JWT_SECRET_KEY", "test-jwt-secret-for-pytest")
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine

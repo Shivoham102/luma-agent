@@ -18,7 +18,13 @@ from agent.database import User, get_db
 # Configuration
 # ---------------------------------------------------------------------------
 
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "change-me-in-production")
+_jwt_secret = os.getenv("JWT_SECRET_KEY")
+if not _jwt_secret and os.getenv("TESTING") != "1":
+    raise RuntimeError(
+        "JWT_SECRET_KEY environment variable is not set. "
+        "Set it to a strong random string before starting the application."
+    )
+JWT_SECRET_KEY: str = _jwt_secret or "test-secret-key"
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_HOURS = 24
 
