@@ -81,6 +81,14 @@ async def register_event(context: RunContext, event_url: str) -> str:
     token = user_tokens.get(room_name) if room_name else None
 
     if not token:
+        if room:
+            await room.local_participant.publish_data(
+                json.dumps({
+                    "type": "registration_progress",
+                    "data": {"event_url": event_url, "status": "failed", "error": "No authentication token available"},
+                }).encode(),
+                topic="ui_update",
+            )
         return json.dumps({
             "success": False,
             "error": "No authentication token available. The user may need to re-login.",
@@ -105,21 +113,47 @@ async def register_event(context: RunContext, event_url: str) -> str:
             )
 
         if resp.status_code == 401:
+            if room:
+                await room.local_participant.publish_data(
+                    json.dumps({
+                        "type": "registration_progress",
+                        "data": {"event_url": event_url, "status": "failed", "error": "Authentication expired"},
+                    }).encode(),
+                    topic="ui_update",
+                )
             return json.dumps({
                 "success": False,
                 "error": "Authentication expired. The user needs to re-login.",
             })
 
         if resp.status_code == 400:
+            error_detail = resp.json().get("detail", "Bad request")
+            if room:
+                await room.local_participant.publish_data(
+                    json.dumps({
+                        "type": "registration_progress",
+                        "data": {"event_url": event_url, "status": "failed", "error": error_detail},
+                    }).encode(),
+                    topic="ui_update",
+                )
             return json.dumps({
                 "success": False,
-                "error": resp.json().get("detail", "Bad request"),
+                "error": error_detail,
             })
 
         if resp.status_code != 200:
+            error_msg = f"Registration failed with status {resp.status_code}"
+            if room:
+                await room.local_participant.publish_data(
+                    json.dumps({
+                        "type": "registration_progress",
+                        "data": {"event_url": event_url, "status": "failed", "error": error_msg},
+                    }).encode(),
+                    topic="ui_update",
+                )
             return json.dumps({
                 "success": False,
-                "error": f"Registration failed with status {resp.status_code}",
+                "error": error_msg,
             })
 
         result = resp.json()

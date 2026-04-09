@@ -97,6 +97,16 @@ export default function Home() {
       room.on(RoomEvent.ConnectionStateChanged, (state: ConnectionState) => {
         if (state === ConnectionState.Connected) {
           setPhase("connected");
+          // Send JWT auth token to the voice agent via data channel
+          const jwt = localStorage.getItem("token");
+          if (jwt) {
+            room.localParticipant.publishData(
+              new TextEncoder().encode(
+                JSON.stringify({ type: "auth_token", token: jwt })
+              ),
+              { topic: "user_input" }
+            );
+          }
         } else if (state === ConnectionState.Disconnected) {
           setAgentSpeaking(false);
           setIsMuted(false);

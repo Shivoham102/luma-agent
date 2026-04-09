@@ -280,13 +280,16 @@ class RegistrationService:
     async def _ensure_logged_in(
         self,
         page: Page,
+        context: BrowserContext,
         user_id: str,
         luma_email: str | None = None,
         luma_password: str | None = None,
-    ) -> bool:
+    ) -> tuple[bool, BrowserContext, Page]:
         """Verify the session is valid; re-login if needed.
 
-        Returns *True* if logged in, *False* otherwise.
+        Returns ``(logged_in, context, page)`` — the context and page may be
+        replaced with fresh instances after a re-login so that subsequent
+        navigation uses the updated storageState.
         """
         # Quick check: navigate to lu.ma and see if redirected to signin
         await page.goto("https://lu.ma/home", wait_until="domcontentloaded")
@@ -297,9 +300,24 @@ class RegistrationService:
             # Session expired — try re-login if credentials provided
             if luma_email and luma_password:
                 logger.info("Session expired for user %s, re-logging in", user_id)
-                return await self.login_to_luma(user_id, luma_email, luma_password)
-            return False
-        return True
+                success = await self.login_to_luma(user_id, luma_email, luma_password)
+                if not success:
+                    return False, context, page
+                # Re-login saved a fresh storageState to disk.  Close the
+                # stale context/page and create new ones that load the
+                # refreshed cookies so subsequent navigation is authenticated.
+                try:
+                    await page.close()
+                except Exception:
+                    pass
+                try:
+                    await context.close()
+                except Exception:
+                    pass
+                context, page = await self._create_browser_context(user_id)
+                return True, context, page
+            return False, context, page
+        return True, context, page
 
     # ------------------------------------------------------------------
     # Event page helpers
@@ -539,13 +557,19 @@ class RegistrationService:
                                 break
 
                 if not matched:
-                    # Check if field is required
+                    # Check if field is actually required in the HTML
                     is_required = (
                         await field.get_attribute("required") is not None
                         or await field.get_attribute("aria-required") == "true"
                     )
-                    if is_required or field_type != "hidden":
+                    if is_required:
+                        # Truly required unknown field — blocks submission
                         unknown_fields.append(label_text)
+                    else:
+                        # Optional visible field — report but don't block
+                        logger.debug(
+                            "Optional unknown field skipped: %s", label_text
+                        )
 
             except Exception as exc:
                 logger.debug("Error processing form field %d: %s", i, exc)
@@ -709,8 +733,8 @@ class RegistrationService:
             # Ensure we're logged in
             luma_email = profile_data.get("luma_email")
             luma_password = profile_data.get("luma_password")
-            logged_in = await self._ensure_logged_in(
-                page, user_id, luma_email, luma_password
+            logged_in, context, page = await self._ensure_logged_in(
+                page, context, user_id, luma_email, luma_password
             )
             if not logged_in:
                 return RegistrationResult(

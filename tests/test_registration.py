@@ -274,7 +274,7 @@ class TestRegistrationFlow:
             with patch.object(
                 self.service, "_ensure_logged_in", new_callable=AsyncMock
             ) as mock_login:
-                mock_login.return_value = True
+                mock_login.return_value = (True, mock_browser_ctx, mock_page)
 
                 with patch.object(
                     self.service, "_detect_event_type", new_callable=AsyncMock
@@ -308,7 +308,7 @@ class TestRegistrationFlow:
             with patch.object(
                 self.service, "_ensure_logged_in", new_callable=AsyncMock
             ) as mock_login:
-                mock_login.return_value = True
+                mock_login.return_value = (True, mock_browser_ctx, mock_page)
 
                 with patch.object(
                     self.service, "_detect_event_type", new_callable=AsyncMock
@@ -348,7 +348,7 @@ class TestRegistrationFlow:
             with patch.object(
                 self.service, "_ensure_logged_in", new_callable=AsyncMock
             ) as mock_login:
-                mock_login.return_value = True
+                mock_login.return_value = (True, mock_browser_ctx, mock_page)
 
                 with patch.object(
                     self.service, "_detect_event_type", new_callable=AsyncMock
@@ -407,7 +407,7 @@ class TestRegistrationFlow:
             with patch.object(
                 self.service, "_ensure_logged_in", new_callable=AsyncMock
             ) as mock_login:
-                mock_login.return_value = True
+                mock_login.return_value = (True, mock_browser_ctx, mock_page)
 
                 with patch.object(
                     self.service, "_detect_event_type", new_callable=AsyncMock
@@ -475,7 +475,7 @@ class TestRegistrationFlow:
             with patch.object(
                 self.service, "_ensure_logged_in", new_callable=AsyncMock
             ) as mock_login:
-                mock_login.return_value = True
+                mock_login.return_value = (True, mock_browser_ctx, mock_page)
 
                 with patch.object(
                     self.service, "_detect_event_type", new_callable=AsyncMock
@@ -719,3 +719,190 @@ class TestFieldMapping:
                 found_email = True
         assert found_name, "Name should be mapped"
         assert found_email, "Email should be mapped"
+
+
+# ---------------------------------------------------------------------------
+# Bug fix verification tests
+# ---------------------------------------------------------------------------
+
+
+class TestReLoginContextRefresh:
+    """Verify that _ensure_logged_in replaces context/page after re-login."""
+
+    def setup_method(self):
+        self.service = RegistrationService()
+
+    @pytest.mark.asyncio
+    async def test_relogin_returns_new_context_and_page(self):
+        """After re-login, _ensure_logged_in returns fresh context and page."""
+        # Original page simulates redirect to signin
+        original_page = AsyncMock()
+        original_page.goto = AsyncMock()
+        original_page.wait_for_timeout = AsyncMock()
+        original_page.url = "https://lu.ma/signin"
+        original_page.close = AsyncMock()
+
+        original_ctx = AsyncMock()
+        original_ctx.close = AsyncMock()
+
+        # New context/page created after re-login
+        new_page = AsyncMock()
+        new_ctx = AsyncMock()
+
+        with patch.object(
+            self.service, "login_to_luma", new_callable=AsyncMock
+        ) as mock_login:
+            mock_login.return_value = True
+
+            with patch.object(
+                self.service, "_create_browser_context", new_callable=AsyncMock
+            ) as mock_create:
+                mock_create.return_value = (new_ctx, new_page)
+
+                logged_in, ctx, page = await self.service._ensure_logged_in(
+                    original_page,
+                    original_ctx,
+                    "user1",
+                    "luma@example.com",
+                    "password123",
+                )
+
+                assert logged_in is True
+                assert ctx is new_ctx
+                assert page is new_page
+                # Verify old context/page were closed
+                original_page.close.assert_called_once()
+                original_ctx.close.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_valid_session_returns_same_context_and_page(self):
+        """When session is valid, same context/page are returned."""
+        page = AsyncMock()
+        page.goto = AsyncMock()
+        page.wait_for_timeout = AsyncMock()
+        page.url = "https://lu.ma/home"  # Not redirected to signin
+
+        ctx = AsyncMock()
+
+        logged_in, returned_ctx, returned_page = await self.service._ensure_logged_in(
+            page, ctx, "user1"
+        )
+
+        assert logged_in is True
+        assert returned_ctx is ctx
+        assert returned_page is page
+
+    @pytest.mark.asyncio
+    async def test_relogin_failure_returns_original_context(self):
+        """If re-login fails, return False with original context/page."""
+        page = AsyncMock()
+        page.goto = AsyncMock()
+        page.wait_for_timeout = AsyncMock()
+        page.url = "https://lu.ma/signin"
+
+        ctx = AsyncMock()
+
+        with patch.object(
+            self.service, "login_to_luma", new_callable=AsyncMock
+        ) as mock_login:
+            mock_login.return_value = False
+
+            logged_in, returned_ctx, returned_page = await self.service._ensure_logged_in(
+                page, ctx, "user1", "luma@example.com", "wrongpw"
+            )
+
+            assert logged_in is False
+            assert returned_ctx is ctx
+            assert returned_page is page
+
+
+class TestOptionalFieldsNotBlocking:
+    """Verify that optional unknown fields don't block submission."""
+
+    def setup_method(self):
+        self.service = RegistrationService()
+
+    @pytest.mark.asyncio
+    async def test_optional_fields_dont_block(self):
+        """Optional visible fields that are unmatched should NOT appear in unknown_fields."""
+        mock_page = AsyncMock()
+        mock_field = AsyncMock()
+
+        # One visible text field, NOT required, with no matching profile key
+        # Use a label that does NOT substring-match any FIELD_MAPPING key
+        mock_page.locator.return_value = mock_field
+        mock_field.count.return_value = 1
+        mock_field.nth = MagicMock(return_value=mock_field)
+        mock_field.get_attribute = AsyncMock(
+            side_effect=lambda attr: {
+                "type": "text",
+                "id": "custom_field",
+                "name": "custom_field",
+                "placeholder": "Passport ID",
+                "aria-label": None,
+                "required": None,      # NOT required
+                "aria-required": None,  # NOT required
+            }.get(attr)
+        )
+        mock_field.input_value = AsyncMock(return_value="")
+
+        # Label lookup returns no match
+        label_locator = AsyncMock()
+        label_locator.count = AsyncMock(return_value=0)
+
+        def locator_side_effect(selector):
+            if selector.startswith("label[for="):
+                return label_locator
+            return mock_field
+
+        mock_page.locator = MagicMock(side_effect=locator_side_effect)
+
+        profile = {"name": "Test", "email": "test@test.com"}
+        all_filled, unknown = await self.service._process_form_fields(
+            mock_page, profile
+        )
+
+        assert all_filled is True
+        assert unknown == []
+
+    @pytest.mark.asyncio
+    async def test_required_fields_do_block(self):
+        """Required visible fields that are unmatched SHOULD appear in unknown_fields."""
+        mock_page = AsyncMock()
+        mock_field = AsyncMock()
+
+        mock_page.locator.return_value = mock_field
+        mock_field.count.return_value = 1
+        mock_field.nth = MagicMock(return_value=mock_field)
+        # Use a label that does NOT substring-match any FIELD_MAPPING key
+        # (e.g. "Passport ID" avoids "name", "email", "linkedin", etc.)
+        mock_field.get_attribute = AsyncMock(
+            side_effect=lambda attr: {
+                "type": "text",
+                "id": "passport_id",
+                "name": "passport_id",
+                "placeholder": "Passport ID",
+                "aria-label": None,
+                "required": "",         # HAS required attribute (empty string = present)
+                "aria-required": None,
+            }.get(attr)
+        )
+        mock_field.input_value = AsyncMock(return_value="")
+
+        label_locator = AsyncMock()
+        label_locator.count = AsyncMock(return_value=0)
+
+        def locator_side_effect(selector):
+            if selector.startswith("label[for="):
+                return label_locator
+            return mock_field
+
+        mock_page.locator = MagicMock(side_effect=locator_side_effect)
+
+        profile = {"name": "Test", "email": "test@test.com"}
+        all_filled, unknown = await self.service._process_form_fields(
+            mock_page, profile
+        )
+
+        assert all_filled is False
+        assert "Passport ID" in unknown
