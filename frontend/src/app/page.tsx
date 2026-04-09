@@ -35,8 +35,6 @@ export default function Home() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [events, setEvents] = useState<LumaEvent[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showEmailModal, setShowEmailModal] = useState(false);
-  const [email, setEmail] = useState("");
   const [agentSpeaking, setAgentSpeaking] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const authenticated = useSyncExternalStore(subscribeToToken, getTokenSnapshot, getTokenServerSnapshot);
@@ -137,9 +135,7 @@ export default function Home() {
         if (participant?.isLocal) return;
         try {
           const msg = JSON.parse(new TextDecoder().decode(payload));
-          if (msg.type === "request_email") {
-            setShowEmailModal(true);
-          } else if (msg.type === "events") {
+          if (msg.type === "events") {
             setEvents(msg.data);
             setSidebarOpen(true);
           } else if (msg.type === "registration" && msg.data?.success) {
@@ -189,17 +185,7 @@ export default function Home() {
     setPhase("idle");
     setEvents([]);
     setRequestedEvents(new Set());
-    setShowEmailModal(false);
   }, []);
-
-  const handleEmailSubmit = useCallback(() => {
-    if (!email || !roomRef.current) return;
-    roomRef.current.localParticipant.publishData(
-      new TextEncoder().encode(JSON.stringify({ type: "email", email })),
-      { topic: "user_input" }
-    );
-    setShowEmailModal(false);
-  }, [email]);
 
   if (!authenticated) {
     return (
@@ -287,38 +273,6 @@ export default function Home() {
           </button>
         )}
       </div>
-
-      {/* Email modal overlay */}
-      {showEmailModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl border border-zinc-700 bg-zinc-900 p-6 shadow-2xl">
-            <h2 className="text-lg font-semibold text-zinc-100">
-              Enter your email
-            </h2>
-            <p className="mt-1 text-sm text-zinc-400">
-              We&apos;ll use this to help you register for events on Luma.
-            </p>
-            <input
-              type="email"
-              autoFocus
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleEmailSubmit()}
-              className="mt-4 w-full rounded-lg border border-zinc-600 bg-zinc-800 px-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-blue-500 focus:outline-none"
-            />
-            <div className="mt-4 flex gap-3">
-              <button
-                onClick={handleEmailSubmit}
-                disabled={!email}
-                className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-40"
-              >
-                Continue
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Event sidebar */}
       <div

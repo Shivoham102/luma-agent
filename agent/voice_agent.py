@@ -28,27 +28,18 @@ API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 
 luma_client = LumaClient()
 
-user_emails: dict[str, str] = {}
 # Maps room_name → JWT token received from the frontend via data channel
 user_tokens: dict[str, str] = {}
 
 
 @function_tool()
-async def request_user_email(context: RunContext) -> str:
-    """Trigger the email input modal on the frontend. Call this after greeting the user."""
-    room = context.session.room_io.room
-    if room:
-        await room.local_participant.publish_data(
-            json.dumps({"type": "request_email"}).encode(),
-            topic="ui_update",
-        )
-    return json.dumps({"status": "waiting", "message": "Email modal shown to user. Wait for the user to provide their email before proceeding."})
+async def fetch_events(context: RunContext, city: str) -> str:
+    """Fetch upcoming Luma events for a specific city.
 
-
-@function_tool()
-async def fetch_events(context: RunContext) -> str:
-    """Fetch upcoming Luma events from the calendar."""
-    events = await luma_client.list_events()
+    Args:
+        city: The city to search for events in (e.g. 'San Francisco', 'New York').
+    """
+    events = await luma_client.list_events(city=city)
     room = context.session.room_io.room
     if room:
         await room.local_participant.publish_data(
@@ -238,18 +229,13 @@ class LumiAgent(Agent):
             stt=deepgram.STT(),
             llm=openai.LLM(model="gpt-4o-mini"),
             tts=openai.TTS(),
-            tools=[request_user_email, fetch_events, check_conflict, register_event],
+            tools=[fetch_events, check_conflict, register_event],
         )
 
     async def on_enter(self):
-        # First: greet the user briefly. Do NOT call any tools in this step.
         await self.session.generate_reply(
-            instructions="Say exactly: 'Hi! I'm Lumi, your Luma event assistant. Let me get your email to get started.' Do NOT call any tools.",
+            instructions="Say exactly: 'Hi! I'm Lumi, your event assistant. What city would you like to see events in?' Do NOT call any tools.",
             allow_interruptions=False,
-        )
-        # Second: after greeting finishes, call request_user_email to show the modal.
-        self.session.generate_reply(
-            instructions="Call request_user_email now.",
         )
 
 
@@ -275,14 +261,7 @@ async def entrypoint(ctx: JobContext):
         if data.participant and data.participant.identity == participant.identity:
             try:
                 msg = json.loads(data.data.decode())
-                if msg.get("type") == "email":
-                    email = msg.get("email", "")
-                    user_emails[ctx.room.name] = email
-                    logger.info(f"Received email from user: {email}")
-                    session.generate_reply(
-                        instructions="The user has submitted their email. Call fetch_events now to show them upcoming events.",
-                    )
-                elif msg.get("type") == "auth_token":
+                if msg.get("type") == "auth_token":
                     token = msg.get("token", "")
                     if token:
                         user_tokens[ctx.room.name] = token

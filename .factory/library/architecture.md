@@ -16,7 +16,7 @@ Luma Agent is a voice-powered event discovery and registration assistant. Users 
 ### Voice Agent (`agent/voice_agent.py`)
 - LiveKit Agents framework — runs as a separate process connecting to LiveKit Cloud
 - Pipeline: Deepgram STT → OpenAI GPT-4o-mini LLM → OpenAI TTS
-- Function tools: `request_user_email`, `fetch_events`, `check_conflict`, `register_event`
+- Function tools: `fetch_events` (with city parameter), `check_conflict`, `register_event`
 - Communicates with frontend via LiveKit data channel (JSON messages)
 - Topic `ui_update` for agent→frontend, `user_input` for frontend→agent
 
@@ -35,7 +35,7 @@ Luma Agent is a voice-powered event discovery and registration assistant. Users 
 ### Next.js Frontend (`frontend/`)
 - Next.js 16 with App Router, React 19, Tailwind CSS v4
 - Routes: `/login`, `/signup`, `/` (protected main app)
-- Main app: orb UI for voice interaction, event sidebar, email modal
+- Main app: orb UI for voice interaction, event sidebar
 - LiveKit client for WebRTC audio + data channel
 - JWT stored in localStorage for API authentication
 
@@ -56,8 +56,6 @@ Luma Agent is a voice-powered event discovery and registration assistant. Users 
 7. Result sent back to frontend via data channel → sidebar updated
 
 ### Data Channel Message Types
-- `request_email` — agent→frontend: show email modal
-- `email` — frontend→agent: user's email address
 - `events` — agent→frontend: list of events
 - `registration` — agent→frontend: registration result
 - `registration_progress` — agent→frontend: progress updates (registering/registered/failed)
