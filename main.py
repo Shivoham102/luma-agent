@@ -1,9 +1,14 @@
 import os
 
+from dotenv import load_dotenv
+
+# Load .env BEFORE any agent/ imports so that environment variables
+# (e.g. JWT_SECRET_KEY) are available when those modules initialise.
+load_dotenv()
+
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from dotenv import load_dotenv
 from livekit.api import AccessToken, VideoGrants
 import uuid
 
@@ -11,8 +16,6 @@ from agent.auth import get_current_user, router as auth_router
 from agent.database import User, init_db
 from agent.luma import LumaClient
 from agent.memory import MemoryClient
-
-load_dotenv()
 
 # Initialise the database (creates tables if they don't exist)
 init_db()

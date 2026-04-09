@@ -18,29 +18,56 @@ from agent.database import User, get_db
 # Configuration
 # ---------------------------------------------------------------------------
 
-_jwt_secret = os.getenv("JWT_SECRET_KEY")
-if not _jwt_secret and os.getenv("TESTING") != "1":
-    raise RuntimeError(
-        "JWT_SECRET_KEY environment variable is not set. "
-        "Set it to a strong random string before starting the application."
-    )
-JWT_SECRET_KEY: str = _jwt_secret or "test-secret-key"
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRE_HOURS = 24
+
+
+def _get_jwt_secret() -> str:
+    """Return the JWT secret, reading from the environment on each call.
+
+    This lazy resolution avoids the need for ``load_dotenv()`` to run before
+    this module is imported.  A ``RuntimeError`` is raised when the variable is
+    missing and ``TESTING`` is not ``'1'``.
+    """
+    secret = os.getenv("JWT_SECRET_KEY")
+    if not secret:
+        if os.getenv("TESTING") == "1":
+            return "test-secret-key"
+        raise RuntimeError(
+            "JWT_SECRET_KEY environment variable is not set. "
+            "Set it to a strong random string before starting the application."
+        )
+    return secret
+
+
+# Keep a module-level alias so existing test code that does
+# ``from agent.auth import JWT_SECRET_KEY`` continues to work.
+# At *import time* the env var may or may not be set; the property
+# is only meaningful after dotenv has loaded or TESTING=1 is set.
+JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY") or "test-secret-key"
 
 # Fernet key for encrypting Luma credentials.
 # Generate once via: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 # Store in env var FERNET_KEY. If not set, derive a deterministic key from JWT_SECRET_KEY (dev only).
-_raw_fernet_key = os.getenv("FERNET_KEY")
-if _raw_fernet_key:
-    _fernet = Fernet(_raw_fernet_key.encode())
-else:
-    import base64
-    import hashlib
-    _derived = base64.urlsafe_b64encode(
-        hashlib.sha256(JWT_SECRET_KEY.encode()).digest()
-    )
-    _fernet = Fernet(_derived)
+_fernet: Fernet | None = None
+
+
+def _get_fernet() -> Fernet:
+    """Return (and cache) a Fernet instance, lazily initialised."""
+    global _fernet  # noqa: PLW0603
+    if _fernet is not None:
+        return _fernet
+    raw_key = os.getenv("FERNET_KEY")
+    if raw_key:
+        _fernet = Fernet(raw_key.encode())
+    else:
+        import base64
+        import hashlib
+        _derived = base64.urlsafe_b64encode(
+            hashlib.sha256(_get_jwt_secret().encode()).digest()
+        )
+        _fernet = Fernet(_derived)
+    return _fernet
 
 # ---------------------------------------------------------------------------
 # Security scheme
@@ -136,12 +163,12 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def encrypt_luma_password(plain: str) -> str:
     """Encrypt a Luma password with Fernet."""
-    return _fernet.encrypt(plain.encode("utf-8")).decode("utf-8")
+    return _get_fernet().encrypt(plain.encode("utf-8")).decode("utf-8")
 
 
 def decrypt_luma_password(encrypted: str) -> str:
     """Decrypt a Fernet-encrypted Luma password."""
-    return _fernet.decrypt(encrypted.encode("utf-8")).decode("utf-8")
+    return _get_fernet().decrypt(encrypted.encode("utf-8")).decode("utf-8")
 
 
 def create_access_token(user_id: int) -> str:
@@ -152,7 +179,7 @@ def create_access_token(user_id: int) -> str:
         "iat": now,
         "exp": now + timedelta(hours=JWT_EXPIRE_HOURS),
     }
-    return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+    return jwt.encode(payload, _get_jwt_secret(), algorithm=JWT_ALGORITHM)
 
 
 def get_current_user(
@@ -167,7 +194,7 @@ def get_current_user(
         )
     token = credentials.credentials
     try:
-        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(token, _get_jwt_secret(), algorithms=[JWT_ALGORITHM])
         user_id = int(payload["sub"])
     except (JWTError, KeyError, ValueError):
         raise HTTPException(
