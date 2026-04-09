@@ -1,0 +1,101 @@
+{
+  "groupId": "auth-api",
+  "surface": "curl",
+  "assertions": [
+    {
+      "id": "VAL-AUTH-016",
+      "status": "pass",
+      "reason": "POST /auth/signup returned 201 and response did not include plaintext password fields.",
+      "evidence": [
+        "auth/auth-api/VAL-AUTH-016-signup-request.json",
+        "auth/auth-api/VAL-AUTH-016-signup-response-body.json",
+        "auth/auth-api/VAL-AUTH-016-signup-response-headers.txt",
+        "auth/auth-api/VAL-AUTH-016-signup-meta.json"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-017",
+      "status": "pass",
+      "reason": "POST /auth/login returned 200 with token_type='bearer'.",
+      "evidence": [
+        "auth/auth-api/VAL-AUTH-017-login-request.json",
+        "auth/auth-api/VAL-AUTH-017-login-response-body.json",
+        "auth/auth-api/VAL-AUTH-017-login-response-headers.txt",
+        "auth/auth-api/VAL-AUTH-017-login-meta.json"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-018",
+      "status": "pass",
+      "reason": "GET /auth/me returned 200 and excluded secret fields.",
+      "evidence": [
+        "auth/auth-api/VAL-AUTH-018-me-valid-token-request.json",
+        "auth/auth-api/VAL-AUTH-018-me-valid-token-response-body.json",
+        "auth/auth-api/VAL-AUTH-018-me-valid-token-response-headers.txt",
+        "auth/auth-api/VAL-AUTH-018-me-valid-token-meta.json"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-019",
+      "status": "pass",
+      "reason": "/auth/me status codes by case: {'missing_auth': 401, 'malformed_token': 401, 'expired_token': 401}",
+      "evidence": [
+        "auth/auth-api/VAL-AUTH-019-status-cases.json",
+        "auth/auth-api/VAL-AUTH-019-me-no-token-request.json",
+        "auth/auth-api/VAL-AUTH-019-me-no-token-response-body.json",
+        "auth/auth-api/VAL-AUTH-019-me-no-token-meta.json",
+        "auth/auth-api/VAL-AUTH-019-me-malformed-token-request.json",
+        "auth/auth-api/VAL-AUTH-019-me-malformed-token-response-body.json",
+        "auth/auth-api/VAL-AUTH-019-me-malformed-token-meta.json",
+        "auth/auth-api/VAL-AUTH-019-me-expired-token-request.json",
+        "auth/auth-api/VAL-AUTH-019-me-expired-token-response-body.json",
+        "auth/auth-api/VAL-AUTH-019-me-expired-token-meta.json"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-020",
+      "status": "pass",
+      "reason": "Database luma_password_encrypted value is non-plaintext.",
+      "evidence": [
+        "auth/auth-api/VAL-AUTH-020-022-db-row.json"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-022",
+      "status": "pass",
+      "reason": "Database password_hash uses bcrypt format.",
+      "evidence": [
+        "auth/auth-api/VAL-AUTH-020-022-db-row.json"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-023",
+      "status": "pass",
+      "reason": "JWT exp-iat lifetime is 86400 seconds.",
+      "evidence": [
+        "auth/auth-api/VAL-AUTH-017-login-response-body.json",
+        "auth/auth-api/VAL-AUTH-023-jwt-claims.json"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-024",
+      "status": "pass",
+      "reason": "POST /token without Authorization returned 401.",
+      "evidence": [
+        "auth/auth-api/VAL-AUTH-024-token-no-auth-request.json",
+        "auth/auth-api/VAL-AUTH-024-token-no-auth-response-body.json",
+        "auth/auth-api/VAL-AUTH-024-token-no-auth-response-headers.txt",
+        "auth/auth-api/VAL-AUTH-024-token-no-auth-meta.json"
+      ]
+    }
+  ],
+  "toolsUsed": [
+    "curl",
+    "python"
+  ],
+  "frictions": [
+    "PowerShell aliases curl to Invoke-WebRequest on this machine; used curl.exe explicitly for all API assertions."
+  ],
+  "blockers": [],
+  "notes": "Test user: auth-api+20260409021318@example.com. Summary: 8 passed, 0 failed, 0 blocked. See auth/auth-api/curl-commands.txt for reproducible curl commands."
+}

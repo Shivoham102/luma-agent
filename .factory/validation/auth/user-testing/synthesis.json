@@ -1,0 +1,101 @@
+{
+  "milestone": "auth",
+  "round": 1,
+  "status": "fail",
+  "assertionsSummary": {
+    "total": 24,
+    "passed": 8,
+    "failed": 0,
+    "blocked": 16
+  },
+  "passedAssertions": [
+    "VAL-AUTH-016",
+    "VAL-AUTH-017",
+    "VAL-AUTH-018",
+    "VAL-AUTH-019",
+    "VAL-AUTH-020",
+    "VAL-AUTH-022",
+    "VAL-AUTH-023",
+    "VAL-AUTH-024"
+  ],
+  "failedAssertions": [],
+  "blockedAssertions": [
+    {
+      "id": "VAL-AUTH-001",
+      "blockedBy": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND)."
+    },
+    {
+      "id": "VAL-AUTH-002",
+      "blockedBy": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND)."
+    },
+    {
+      "id": "VAL-AUTH-003",
+      "blockedBy": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND)."
+    },
+    {
+      "id": "VAL-AUTH-004",
+      "blockedBy": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND)."
+    },
+    {
+      "id": "VAL-AUTH-005",
+      "blockedBy": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND)."
+    },
+    {
+      "id": "VAL-AUTH-006",
+      "blockedBy": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND)."
+    },
+    {
+      "id": "VAL-AUTH-007",
+      "blockedBy": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND)."
+    },
+    {
+      "id": "VAL-AUTH-008",
+      "blockedBy": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND)."
+    },
+    {
+      "id": "VAL-AUTH-009",
+      "blockedBy": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND)."
+    },
+    {
+      "id": "VAL-AUTH-010",
+      "blockedBy": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND)."
+    },
+    {
+      "id": "VAL-AUTH-011",
+      "blockedBy": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND)."
+    },
+    {
+      "id": "VAL-AUTH-012",
+      "blockedBy": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND)."
+    },
+    {
+      "id": "VAL-AUTH-013",
+      "blockedBy": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND)."
+    },
+    {
+      "id": "VAL-AUTH-014",
+      "blockedBy": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND)."
+    },
+    {
+      "id": "VAL-AUTH-015",
+      "blockedBy": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND)."
+    },
+    {
+      "id": "VAL-AUTH-021",
+      "blockedBy": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND)."
+    }
+  ],
+  "appliedUpdates": [
+    {
+      "target": "user-testing.md",
+      "description": "Added Flow Validator Guidance sections for agent-browser and curl surfaces, including isolation boundaries and known agent-browser htmlfy blocker handling.",
+      "source": "setup"
+    },
+    {
+      "target": "user-testing.md",
+      "description": "Documented Windows curl alias friction; validators should use curl.exe explicitly for API assertions.",
+      "source": "flow-report"
+    }
+  ],
+  "previousRound": null
+}

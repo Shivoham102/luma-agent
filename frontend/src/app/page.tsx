@@ -32,6 +32,7 @@ type Phase = "idle" | "connecting" | "connected";
 
 export default function Home() {
   const router = useRouter();
+  const [hasMounted, setHasMounted] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const [events, setEvents] = useState<LumaEvent[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -45,13 +46,20 @@ export default function Home() {
   const roomRef = useRef<Room | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Wait for client-side hydration before checking auth state.
+  // Prevents the SSR snapshot (false) from triggering an incorrect redirect.
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
   // Route protection: redirect to /login if no JWT token.
   // Re-runs whenever `authenticated` changes (e.g. token removed from localStorage).
+  // Only checks after mount to avoid acting on the SSR server snapshot.
   useEffect(() => {
-    if (!authenticated) {
+    if (hasMounted && !authenticated) {
       router.replace("/login");
     }
-  }, [authenticated, router]);
+  }, [hasMounted, authenticated, router]);
 
   useEffect(() => {
     return () => {
@@ -187,7 +195,7 @@ export default function Home() {
     setRequestedEvents(new Set());
   }, []);
 
-  if (!authenticated) {
+  if (!hasMounted || !authenticated) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-[#0a0a0a]">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-600 border-t-blue-500" />

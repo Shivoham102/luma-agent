@@ -29,7 +29,7 @@ export default function EventList({ events, onSelect, selectedEventId }: EventLi
             <h3 className="font-medium text-zinc-900 dark:text-zinc-100">
               {index + 1}. {event.name}
             </h3>
-            <span className="text-xs text-zinc-500">{event.category}</span>
+            <span className="text-xs text-zinc-500">{event.location}</span>
           </div>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{event.description}</p>
           <div className="mt-2 flex gap-4 text-xs text-zinc-500">

@@ -1,0 +1,144 @@
+{
+  "groupId": "auth-ui",
+  "surface": "agent-browser",
+  "assertions": [
+    {
+      "id": "VAL-AUTH-001",
+      "status": "blocked",
+      "reason": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND).",
+      "evidence": [
+        "auth/auth-ui/agent-browser-daemon-stacktrace.txt"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-002",
+      "status": "blocked",
+      "reason": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND).",
+      "evidence": [
+        "auth/auth-ui/agent-browser-daemon-stacktrace.txt"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-003",
+      "status": "blocked",
+      "reason": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND).",
+      "evidence": [
+        "auth/auth-ui/agent-browser-daemon-stacktrace.txt"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-004",
+      "status": "blocked",
+      "reason": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND).",
+      "evidence": [
+        "auth/auth-ui/agent-browser-daemon-stacktrace.txt"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-005",
+      "status": "blocked",
+      "reason": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND).",
+      "evidence": [
+        "auth/auth-ui/agent-browser-daemon-stacktrace.txt"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-006",
+      "status": "blocked",
+      "reason": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND).",
+      "evidence": [
+        "auth/auth-ui/agent-browser-daemon-stacktrace.txt"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-007",
+      "status": "blocked",
+      "reason": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND).",
+      "evidence": [
+        "auth/auth-ui/agent-browser-daemon-stacktrace.txt"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-008",
+      "status": "blocked",
+      "reason": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND).",
+      "evidence": [
+        "auth/auth-ui/agent-browser-daemon-stacktrace.txt"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-009",
+      "status": "blocked",
+      "reason": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND).",
+      "evidence": [
+        "auth/auth-ui/agent-browser-daemon-stacktrace.txt"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-010",
+      "status": "blocked",
+      "reason": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND).",
+      "evidence": [
+        "auth/auth-ui/agent-browser-daemon-stacktrace.txt"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-011",
+      "status": "blocked",
+      "reason": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND).",
+      "evidence": [
+        "auth/auth-ui/agent-browser-daemon-stacktrace.txt"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-012",
+      "status": "blocked",
+      "reason": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND).",
+      "evidence": [
+        "auth/auth-ui/agent-browser-daemon-stacktrace.txt"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-013",
+      "status": "blocked",
+      "reason": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND).",
+      "evidence": [
+        "auth/auth-ui/agent-browser-daemon-stacktrace.txt"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-014",
+      "status": "blocked",
+      "reason": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND).",
+      "evidence": [
+        "auth/auth-ui/agent-browser-daemon-stacktrace.txt"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-015",
+      "status": "blocked",
+      "reason": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND).",
+      "evidence": [
+        "auth/auth-ui/agent-browser-daemon-stacktrace.txt"
+      ]
+    },
+    {
+      "id": "VAL-AUTH-021",
+      "status": "blocked",
+      "reason": "Blocked: agent-browser daemon failed to start due missing htmlfy module (ERR_MODULE_NOT_FOUND).",
+      "evidence": [
+        "auth/auth-ui/agent-browser-daemon-stacktrace.txt"
+      ]
+    }
+  ],
+  "toolsUsed": [
+    "agent-browser"
+  ],
+  "frictions": [
+    "PowerShell curl alias required using curl.exe for local health checks while validating environment."
+  ],
+  "blockers": [
+    "agent-browser daemon startup failure: ERR_MODULE_NOT_FOUND for C:\\Users\\shivo\\.factory\\tools\\agent-browser\\dist\\node_modules\\htmlfy\\src\\exports\\index.js imported by webdriverio. Retried multiple open commands and attempted `agent-browser install`; browser automation remained unavailable."
+  ],
+  "notes": "Local services were reachable (frontend /signup returned HTTP 200; backend /health returned {\"status\":\"ok\"}), but all assigned UI assertions were blocked because agent-browser could not start."
+}
