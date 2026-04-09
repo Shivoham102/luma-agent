@@ -1,26 +1,22 @@
 commands:
-  install_python: venv\Scripts\pip.exe install -r requirements.txt
-  install_frontend: cd frontend && npm install
-  typecheck_frontend: cd frontend && npx tsc --noEmit
+  install_backend: C:\Users\shivo\Projects\luma-agent\venv\Scripts\python.exe -m pip install -r C:\Users\shivo\Projects\luma-agent\requirements.txt
+  install_frontend: cd C:\Users\shivo\Projects\luma-agent\frontend; npm install
+  install_playwright: C:\Users\shivo\Projects\luma-agent\venv\Scripts\python.exe -m playwright install chromium
+  test: C:\Users\shivo\Projects\luma-agent\venv\Scripts\python.exe -m pytest C:\Users\shivo\Projects\luma-agent -v --tb=short -x
+  lint: cd C:\Users\shivo\Projects\luma-agent\frontend; npm run lint
+  typecheck: cd C:\Users\shivo\Projects\luma-agent\frontend; npx tsc --noEmit
 
 services:
-  fastapi:
-    start: venv\Scripts\python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000
-    stop: for /f "tokens=5" %a in ('netstat -ano ^| findstr :8000 ^| findstr LISTENING') do taskkill /PID %a /F
-    healthcheck: curl -sf http://localhost:8000/token -X POST -H "Content-Type: application/json" -d "{}"
+  backend:
+    start: Start-Process -NoNewWindow -FilePath "C:\Users\shivo\Projects\luma-agent\venv\Scripts\python.exe" -ArgumentList "-m","uvicorn","main:app","--port","8000","--reload" -WorkingDirectory "C:\Users\shivo\Projects\luma-agent"
+    stop: Get-Process -Id (Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue).OwningProcess -ErrorAction SilentlyContinue | Stop-Process -Force
+    healthcheck: curl -sf http://localhost:8000/health
     port: 8000
     depends_on: []
 
   frontend:
-    start: cd frontend && npm run dev -- --port 3000
-    stop: for /f "tokens=5" %a in ('netstat -ano ^| findstr :3000 ^| findstr LISTENING') do taskkill /PID %a /F
+    start: Start-Process -NoNewWindow -FilePath "npm" -ArgumentList "run","dev" -WorkingDirectory "C:\Users\shivo\Projects\luma-agent\frontend"
+    stop: Get-Process -Id (Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue).OwningProcess -ErrorAction SilentlyContinue | Stop-Process -Force
     healthcheck: curl -sf http://localhost:3000
     port: 3000
-    depends_on: []
-
-  voice_agent:
-    start: venv\Scripts\python.exe agent/voice_agent.py start
-    stop: taskkill /F /IM python.exe /FI "WINDOWTITLE eq voice_agent*"
-    healthcheck: echo "Voice agent connects outbound to LiveKit Cloud - no local healthcheck"
-    port: 0
-    depends_on: [fastapi]
+    depends_on: [backend]

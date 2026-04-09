@@ -1,32 +1,43 @@
 # User Testing
 
+Testing surface, tools, and resource cost classification.
+
+---
+
 ## Validation Surface
 
-The primary testing surface is the voice agent interaction through the web browser at http://localhost:3000. Testing requires:
-- A running FastAPI backend (port 8000)
-- A running LiveKit voice agent process
-- A running Next.js frontend (port 3000)
-- Valid API keys for LiveKit, OpenAI, Deepgram, and Apify
+### Browser UI (Primary)
+- **Surface**: Next.js frontend at http://localhost:3000
+- **Tool**: agent-browser
+- **What to test**: Signup/login pages, protected routes, event sidebar, registration status badges
+- **Setup**: Frontend dev server must be running on port 3000, backend on port 8000
+- **Auth flows**: Navigate to /signup, /login, verify redirects and form submissions
 
-Voice/audio testing cannot be automated -- requires manual user interaction (pressing the orb, listening to the agent, observing UI changes).
+### API Endpoints (Secondary)
+- **Surface**: FastAPI backend at http://localhost:8000
+- **Tool**: curl
+- **What to test**: /auth/signup, /auth/login, /auth/me, /api/register, /token, /health
+- **Auth**: Most endpoints require JWT Bearer token in Authorization header
+
+### Voice Agent (Out of Scope for Automated Testing)
+- Voice interactions (STT/TTS) cannot be automated via agent-browser
+- Data channel communication is tested indirectly via API and frontend state
 
 ## Validation Concurrency
 
-Max concurrent validators: 1 (voice interaction is inherently serial and requires human observation)
+### agent-browser
+- Machine: 16GB RAM, 24 CPU cores, ~4GB free at baseline
+- Each agent-browser instance: ~300MB RAM + frontend dev server ~470MB
+- Usable headroom: ~4GB * 0.7 = 2.8GB
+- **Max concurrent: 3** (conservative due to limited free RAM)
+- Frontend dev server is shared across instances
 
-## Testing Approach
+### curl
+- Negligible resource usage
+- **Max concurrent: 5**
 
-All validation is manual per user preference. No automated tests.
+## Test Fixtures
 
-## Flow Validator Guidance: browser-voice-flow
-
-- Isolation boundary: use only the shared local app endpoints (`http://localhost:3000` frontend, `http://localhost:8000` backend) and the already-running local voice agent process.
-- Do not change application code, environment variables, or service ports while validating.
-- Do not run parallel voice sessions; only one orb/session at a time.
-- Keep evidence under the assigned evidence directory (screenshots, step notes, observed behavior).
-
-## Flow Validator Guidance: code-review
-
-- Isolation boundary: read-only inspection of repository files relevant to assigned assertions.
-- Do not modify files, dependencies, or runtime services during code-review validation.
-- Record exact file paths and snippets that support each assertion outcome.
+- Registration engine tests require real Luma account credentials stored for a test user
+- Event-specific tests (paid, approval-required, free) depend on finding real events of each type on lu.ma
+- Validators should create test users via POST /auth/signup before testing auth-protected flows
