@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
+import httpx
 from livekit import rtc
 from livekit.agents import (
     Agent,
@@ -23,10 +24,13 @@ load_dotenv()
 logger = logging.getLogger("luma-voice-agent")
 
 PROMPT_PATH = Path(__file__).resolve().parent.parent / "prompts" / "system_prompt.txt"
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 
 luma_client = LumaClient()
 
 user_emails: dict[str, str] = {}
+# Maps room_name → JWT token received from the frontend via data channel
+user_tokens: dict[str, str] = {}
 
 
 @function_tool()
@@ -66,21 +70,130 @@ async def check_conflict(context: RunContext, event_id: str) -> str:
 
 
 @function_tool()
-async def register_event(context: RunContext, event_id: str) -> str:
-    """Direct the user to register for a Luma event by opening the event URL."""
-    result = {
-        "success": True,
-        "event_id": event_id,
-        "url": event_id,
-        "message": "The event registration link is now shown in the sidebar. Please ask the user to click it to complete registration on Luma.",
-    }
+async def register_event(context: RunContext, event_url: str) -> str:
+    """Register the user for a Luma event using the backend registration service.
+
+    Args:
+        event_url: The lu.ma event URL to register for.
+    """
     room = context.session.room_io.room
+    room_name = room.name if room else None
+    token = user_tokens.get(room_name) if room_name else None
+
+    if not token:
+        return json.dumps({
+            "success": False,
+            "error": "No authentication token available. The user may need to re-login.",
+        })
+
+    # Send progress update to frontend
     if room:
         await room.local_participant.publish_data(
-            json.dumps({"type": "registration", "data": result}).encode(),
+            json.dumps({
+                "type": "registration_progress",
+                "data": {"event_url": event_url, "status": "registering"},
+            }).encode(),
             topic="ui_update",
         )
-    return json.dumps(result)
+
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            resp = await client.post(
+                f"{API_BASE_URL}/api/register",
+                json={"event_url": event_url},
+                headers={"Authorization": f"Bearer {token}"},
+            )
+
+        if resp.status_code == 401:
+            return json.dumps({
+                "success": False,
+                "error": "Authentication expired. The user needs to re-login.",
+            })
+
+        if resp.status_code == 400:
+            return json.dumps({
+                "success": False,
+                "error": resp.json().get("detail", "Bad request"),
+            })
+
+        if resp.status_code != 200:
+            return json.dumps({
+                "success": False,
+                "error": f"Registration failed with status {resp.status_code}",
+            })
+
+        result = resp.json()
+
+        # If unknown fields are present, return them so the LLM can ask the user
+        if result.get("status") == "needs_input" and result.get("unknown_fields"):
+            if room:
+                await room.local_participant.publish_data(
+                    json.dumps({
+                        "type": "registration_progress",
+                        "data": {"event_url": event_url, "status": "needs_input"},
+                    }).encode(),
+                    topic="ui_update",
+                )
+            return json.dumps({
+                "success": False,
+                "needs_input": True,
+                "unknown_fields": result["unknown_fields"],
+                "message": "The event has custom fields that need answers before registration can proceed.",
+            })
+
+        # Determine final status for frontend
+        reg_status = "registered" if result.get("status") == "registered" else "failed"
+        if result.get("status") in ("pending_approval", "already_registered"):
+            reg_status = "registered"
+
+        # Send final result to frontend via data channel
+        if room:
+            await room.local_participant.publish_data(
+                json.dumps({
+                    "type": "registration_progress",
+                    "data": {
+                        "event_url": event_url,
+                        "status": reg_status,
+                        "error": result.get("error"),
+                    },
+                }).encode(),
+                topic="ui_update",
+            )
+
+        return json.dumps({
+            "success": result.get("status") in ("registered", "pending_approval", "already_registered"),
+            "status": result.get("status"),
+            "event_name": result.get("event_name", ""),
+            "message": result.get("message", ""),
+        })
+
+    except httpx.TimeoutException:
+        if room:
+            await room.local_participant.publish_data(
+                json.dumps({
+                    "type": "registration_progress",
+                    "data": {"event_url": event_url, "status": "failed", "error": "Timeout"},
+                }).encode(),
+                topic="ui_update",
+            )
+        return json.dumps({
+            "success": False,
+            "error": "Registration request timed out. Please try again.",
+        })
+    except Exception as exc:
+        logger.error("register_event error: %s", exc)
+        if room:
+            await room.local_participant.publish_data(
+                json.dumps({
+                    "type": "registration_progress",
+                    "data": {"event_url": event_url, "status": "failed", "error": str(exc)},
+                }).encode(),
+                topic="ui_update",
+            )
+        return json.dumps({
+            "success": False,
+            "error": f"Registration failed: {exc}",
+        })
 
 
 class LumiAgent(Agent):
@@ -135,6 +248,11 @@ async def entrypoint(ctx: JobContext):
                     session.generate_reply(
                         instructions="The user has submitted their email. Call fetch_events now to show them upcoming events.",
                     )
+                elif msg.get("type") == "auth_token":
+                    token = msg.get("token", "")
+                    if token:
+                        user_tokens[ctx.room.name] = token
+                        logger.info("Stored auth token for room %s", ctx.room.name)
             except Exception as e:
                 logger.error(f"Error processing data from user: {e}")
 

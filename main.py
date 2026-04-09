@@ -6,16 +6,18 @@ from dotenv import load_dotenv
 # (e.g. JWT_SECRET_KEY) are available when those modules initialise.
 load_dotenv()
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from livekit.api import AccessToken, VideoGrants
+from pydantic import BaseModel
 import uuid
 
-from agent.auth import get_current_user, router as auth_router
+from agent.auth import decrypt_luma_password, get_current_user, router as auth_router
 from agent.database import User, init_db
 from agent.luma import LumaClient
 from agent.memory import MemoryClient
+from agent.registration import RegistrationService
 
 # Initialise the database (creates tables if they don't exist)
 init_db()
@@ -32,14 +34,64 @@ app.add_middleware(
 
 luma_client = LumaClient()
 memory_client = MemoryClient()
+registration_service = RegistrationService()
 
 # Register auth routes
 app.include_router(auth_router)
 
 
+# ---------------------------------------------------------------------------
+# Registration request/response schemas
+# ---------------------------------------------------------------------------
+
+
+class RegisterRequest(BaseModel):
+    event_url: str
+    custom_field_answers: dict[str, str] | None = None
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.post("/api/register")
+async def register_for_event(
+    body: RegisterRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """Register the authenticated user for a Luma event via Playwright."""
+    # Check Luma credentials
+    if not current_user.luma_email or not current_user.luma_password_encrypted:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Luma credentials not configured",
+        )
+
+    # Decrypt luma_password
+    luma_password = decrypt_luma_password(current_user.luma_password_encrypted)
+
+    # Build profile data dict
+    profile_data = {
+        "name": current_user.name,
+        "email": current_user.email,
+        "linkedin_url": current_user.linkedin_url,
+        "job_title": current_user.job_title,
+        "company": current_user.company,
+        "phone": current_user.phone,
+        "twitter_x": current_user.twitter_x,
+        "luma_email": current_user.luma_email,
+        "luma_password": luma_password,
+    }
+
+    result = await registration_service.register_for_event(
+        user_id=str(current_user.id),
+        event_url=body.event_url,
+        profile_data=profile_data,
+        custom_field_answers=body.custom_field_answers,
+    )
+
+    return result.model_dump()
 
 
 @app.post("/token")
