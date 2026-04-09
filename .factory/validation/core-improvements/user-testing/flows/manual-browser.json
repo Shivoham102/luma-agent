@@ -1,0 +1,127 @@
+{
+  "groupId": "manual-browser",
+  "milestone": "core-improvements",
+  "testedAt": "2026-04-07T06:40:13Z",
+  "isolation": {
+    "missionDir": "C:/Users/shivo/.factory/missions/af9a24ff-840a-4aac-9bc0-44a47301dd8f",
+    "frontendUrl": "http://localhost:3000",
+    "backendUrl": "http://localhost:8000",
+    "voiceAgentProcess": "running-locally (provided by parent task)"
+  },
+  "toolsUsed": [
+    "agent-browser",
+    "execute"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-VOICE-001",
+      "title": "Agent greets before showing email modal",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Start browser automation session and open frontend",
+          "expected": "Page loads and orb can be interacted with to observe greeting/modal ordering",
+          "observed": "agent-browser daemon failed to start with ERR_MODULE_NOT_FOUND before opening page"
+        }
+      ],
+      "evidence": {
+        "screenshots": [],
+        "consoleErrors": "blocked - no browser session could be created",
+        "network": "blocked - no browser session could be created",
+        "artifacts": [
+          "core-improvements/manual-browser/agent-browser-blocker.txt"
+        ]
+      },
+      "issues": "Blocked by local browser automation infrastructure failure (agent-browser missing htmlfy module)."
+    },
+    {
+      "id": "VAL-VOICE-002",
+      "title": "Email modal still appears after greeting",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Launch browser session and run greeting/email modal flow",
+          "expected": "Email modal appears after greeting and email submission works",
+          "observed": "agent-browser daemon failed before any UI interaction"
+        }
+      ],
+      "evidence": {
+        "screenshots": [],
+        "consoleErrors": "blocked - no browser session could be created",
+        "network": "blocked - no browser session could be created",
+        "artifacts": [
+          "core-improvements/manual-browser/agent-browser-blocker.txt"
+        ]
+      },
+      "issues": "Blocked by local browser automation infrastructure failure (agent-browser missing htmlfy module)."
+    },
+    {
+      "id": "VAL-EVENTS-002",
+      "title": "Events display correctly in frontend sidebar",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Run end-to-end browser flow through event fetch and sidebar rendering",
+          "expected": "Fetched events render in sidebar with expected fields",
+          "observed": "agent-browser daemon failed before frontend could be opened"
+        }
+      ],
+      "evidence": {
+        "screenshots": [],
+        "consoleErrors": "blocked - no browser session could be created",
+        "network": "blocked - no browser session could be created",
+        "artifacts": [
+          "core-improvements/manual-browser/agent-browser-blocker.txt"
+        ]
+      },
+      "issues": "Blocked by local browser automation infrastructure failure (agent-browser missing htmlfy module)."
+    },
+    {
+      "id": "VAL-CROSS-001",
+      "title": "End-to-end flow works with new actor",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Execute full browser flow: orb -> greeting -> modal -> email submit -> event fetch -> sidebar display",
+          "expected": "All steps complete in sequence without errors",
+          "observed": "Unable to begin flow because agent-browser daemon cannot start"
+        }
+      ],
+      "evidence": {
+        "screenshots": [],
+        "consoleErrors": "blocked - no browser session could be created",
+        "network": "blocked - no browser session could be created",
+        "artifacts": [
+          "core-improvements/manual-browser/agent-browser-blocker.txt"
+        ]
+      },
+      "issues": "Blocked by local browser automation infrastructure failure (agent-browser missing htmlfy module)."
+    }
+  ],
+  "frictions": [
+    {
+      "description": "PowerShell does not accept && command chaining used in agent-browser examples.",
+      "resolved": true,
+      "resolution": "Switched to single-command execution per call.",
+      "affectedAssertions": [
+        "VAL-VOICE-001",
+        "VAL-VOICE-002",
+        "VAL-EVENTS-002",
+        "VAL-CROSS-001"
+      ]
+    }
+  ],
+  "blockers": [
+    {
+      "description": "agent-browser daemon crashes on startup with ERR_MODULE_NOT_FOUND for htmlfy module path in local tool installation.",
+      "affectedAssertions": [
+        "VAL-VOICE-001",
+        "VAL-VOICE-002",
+        "VAL-EVENTS-002",
+        "VAL-CROSS-001"
+      ],
+      "quickFixAttempted": "Ran agent-browser --version (success), retried open/close commands; all daemon-start commands failed with same module error."
+    }
+  ],
+  "summary": "Tested 4 assigned manual assertions; 0 passed, 0 failed, 4 blocked due to browser automation infrastructure failure before UI interaction."
+}

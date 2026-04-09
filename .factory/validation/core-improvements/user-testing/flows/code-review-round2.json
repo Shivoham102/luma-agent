@@ -1,0 +1,269 @@
+{
+  "groupId": "code-review-round2",
+  "milestone": "core-improvements",
+  "testedAt": "2026-04-07T06:53:48.9561516Z",
+  "isolation": {
+    "surface": "code-review",
+    "guidanceSection": "Flow Validator Guidance: code-review",
+    "mode": "read-only inspection",
+    "repoRoot": "C:/Users/shivo/Projects/luma-agent",
+    "missionDir": "C:/Users/shivo/.factory/missions/af9a24ff-840a-4aac-9bc0-44a47301dd8f"
+  },
+  "toolsUsed": [
+    "Read",
+    "Grep",
+    "Execute"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-EVENTS-001",
+      "title": "Events fetched via matyascimbulka/luma-event-scraper",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Inspect `agent/luma.py` imports and actor id",
+          "expected": "apify-client import and `matyascimbulka/luma-event-scraper` actor are used",
+          "observed": "Found `from apify_client import ApifyClient` (`agent/luma.py:5`) and `self.actor_id = \"matyascimbulka/luma-event-scraper\"` (`agent/luma.py:15`)."
+        },
+        {
+          "action": "Search for removed legacy implementation markers",
+          "expected": "No `mhamas/luma-calendar-events-scraper`, no `LUMA_CALENDAR_SLUGS`, no `httpx` usage in `agent/luma.py`",
+          "observed": "Grep returned no matches for `mhamas/luma-calendar-events-scraper|LUMA_CALENDAR_SLUGS|httpx` in `agent/luma.py`."
+        }
+      ],
+      "evidence": {
+        "notes": [
+          "core-improvements/code-review-round2/code-review-evidence.md"
+        ],
+        "snippets": [
+          "C:/Users/shivo/Projects/luma-agent/agent/luma.py:5 -> from apify_client import ApifyClient",
+          "C:/Users/shivo/Projects/luma-agent/agent/luma.py:15 -> self.actor_id = \"matyascimbulka/luma-event-scraper\""
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-EVENTS-003",
+      "title": "New environment variables configure the scraper",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Inspect `.env.example`",
+          "expected": "`LUMA_EVENT_CATEGORIES` and `LUMA_CITIES` are present and old var removed",
+          "observed": "Found `LUMA_EVENT_CATEGORIES=ai,tech` (`.env.example:7`) and `LUMA_CITIES=San Francisco,New York` (`.env.example:8`); `LUMA_CALENDAR_SLUGS` not found."
+        },
+        {
+          "action": "Inspect `agent/luma.py` env var reads",
+          "expected": "Code reads `LUMA_EVENT_CATEGORIES` and `LUMA_CITIES`",
+          "observed": "Found `os.getenv(\"LUMA_EVENT_CATEGORIES\", \"ai,tech\")` (`agent/luma.py:18`) and `os.getenv(\"LUMA_CITIES\", \"San Francisco\")` (`agent/luma.py:23`)."
+        }
+      ],
+      "evidence": {
+        "notes": [
+          "core-improvements/code-review-round2/code-review-evidence.md"
+        ],
+        "snippets": [
+          "C:/Users/shivo/Projects/luma-agent/.env.example:7 -> LUMA_EVENT_CATEGORIES=ai,tech",
+          "C:/Users/shivo/Projects/luma-agent/.env.example:8 -> LUMA_CITIES=San Francisco,New York",
+          "C:/Users/shivo/Projects/luma-agent/agent/luma.py:18 -> os.getenv(\"LUMA_EVENT_CATEGORIES\", \"ai,tech\")",
+          "C:/Users/shivo/Projects/luma-agent/agent/luma.py:23 -> os.getenv(\"LUMA_CITIES\", \"San Francisco\")"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-EVENTS-004",
+      "title": "apify-client added to requirements.txt",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Inspect dependency list",
+          "expected": "`apify-client` appears in `requirements.txt`",
+          "observed": "Found `apify-client>=1.8.0` (`requirements.txt:11`)."
+        },
+        {
+          "action": "Import package from project venv",
+          "expected": "`apify_client` imports successfully",
+          "observed": "Command `& \"C:/Users/shivo/Projects/luma-agent/venv/Scripts/python.exe\" -c \"import apify_client; print('apify_client_import_ok')\"` returned `apify_client_import_ok` with exit code 0."
+        }
+      ],
+      "evidence": {
+        "notes": [
+          "core-improvements/code-review-round2/code-review-evidence.md"
+        ],
+        "snippets": [
+          "C:/Users/shivo/Projects/luma-agent/requirements.txt:11 -> apify-client>=1.8.0"
+        ],
+        "command": "& \"C:/Users/shivo/Projects/luma-agent/venv/Scripts/python.exe\" -c \"import apify_client; print('apify_client_import_ok')\""
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-README-001",
+      "title": "README reflects actual technology stack",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Inspect README architecture and stack sections",
+          "expected": "README references LiveKit Agents, OpenAI TTS, Deepgram STT, Silero VAD, Apify actor, Next.js + livekit-client, FastAPI token backend",
+          "observed": "Found required stack references at README lines 21, 22, 23, 25, 40, 42, 43."
+        },
+        {
+          "action": "Search README for stale references",
+          "expected": "No ElevenLabs, email_parser.py, or conversation state machine mentions",
+          "observed": "Grep returned no matches for `ElevenLabs|email_parser.py|conversation state machine`."
+        }
+      ],
+      "evidence": {
+        "notes": [
+          "core-improvements/code-review-round2/code-review-evidence.md"
+        ],
+        "snippets": [
+          "C:/Users/shivo/Projects/luma-agent/README.md:21 -> Voice Agent (LiveKit Agents framework)",
+          "C:/Users/shivo/Projects/luma-agent/README.md:22 -> Deepgram STT",
+          "C:/Users/shivo/Projects/luma-agent/README.md:23 -> Silero VAD",
+          "C:/Users/shivo/Projects/luma-agent/README.md:25 -> OpenAI TTS",
+          "C:/Users/shivo/Projects/luma-agent/README.md:40 -> Apify (`matyascimbulka/luma-event-scraper`)",
+          "C:/Users/shivo/Projects/luma-agent/README.md:42 -> Backend | FastAPI",
+          "C:/Users/shivo/Projects/luma-agent/README.md:43 -> Frontend | Next.js + `livekit-client`"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-README-002",
+      "title": "README includes setup and run instructions",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Inspect setup and environment sections",
+          "expected": "README includes dependency installation and environment configuration instructions",
+          "observed": "Found `## Environment Variables` (`README.md:93`), `## Setup` (`README.md:111`), `pip install -r requirements.txt` (`README.md:120`), `npm install` (`README.md:127`)."
+        },
+        {
+          "action": "Inspect run and usage sections",
+          "expected": "README includes FastAPI, voice agent, frontend start commands and app usage flow",
+          "observed": "Found `## Running` (`README.md:141`) with `uvicorn main:app` (`README.md:149`), `python agent/voice_agent.py start` (`README.md:156`), `npm run dev` (`README.md:163`), and `## Usage` (`README.md:168`)."
+        }
+      ],
+      "evidence": {
+        "notes": [
+          "core-improvements/code-review-round2/code-review-evidence.md"
+        ],
+        "snippets": [
+          "C:/Users/shivo/Projects/luma-agent/README.md:93 -> ## Environment Variables",
+          "C:/Users/shivo/Projects/luma-agent/README.md:111 -> ## Setup",
+          "C:/Users/shivo/Projects/luma-agent/README.md:120 -> pip install -r requirements.txt",
+          "C:/Users/shivo/Projects/luma-agent/README.md:127 -> npm install",
+          "C:/Users/shivo/Projects/luma-agent/README.md:141 -> ## Running",
+          "C:/Users/shivo/Projects/luma-agent/README.md:149 -> uvicorn main:app --host 127.0.0.1 --port 8000",
+          "C:/Users/shivo/Projects/luma-agent/README.md:156 -> python agent/voice_agent.py start",
+          "C:/Users/shivo/Projects/luma-agent/README.md:163 -> npm run dev",
+          "C:/Users/shivo/Projects/luma-agent/README.md:168 -> ## Usage"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-DIALOGUE-001",
+      "title": "Agent dialogue is concise",
+      "status": "blocked",
+      "steps": [
+        {
+          "action": "Inspect `prompts/system_prompt.txt` for brevity constraints",
+          "expected": "Prompt enforces short, direct responses",
+          "observed": "Found explicit constraints: `Be direct` (`system_prompt.txt:1`), `Keep every response to 1–2 short sentences` (`:7`), and minimal confirmations (`:9`)."
+        },
+        {
+          "action": "Inspect `agent/voice_agent.py` greeting/on-enter instructions",
+          "expected": "Greeting and follow-ups are brief",
+          "observed": "Found single-sentence scripted greeting (`voice_agent.py:100`) and brief acknowledgment instruction (`voice_agent.py:136`)."
+        },
+        {
+          "action": "Validate runtime spoken behavior",
+          "expected": "Actual live responses are concise during interaction",
+          "observed": "Not executed in this code-review-only surface; manual voice interaction is required by contract."
+        }
+      ],
+      "evidence": {
+        "notes": [
+          "core-improvements/code-review-round2/code-review-evidence.md"
+        ],
+        "snippets": [
+          "C:/Users/shivo/Projects/luma-agent/prompts/system_prompt.txt:1 -> Be direct — the user wants events quickly, not conversation.",
+          "C:/Users/shivo/Projects/luma-agent/prompts/system_prompt.txt:7 -> Keep every response to 1–2 short sentences.",
+          "C:/Users/shivo/Projects/luma-agent/prompts/system_prompt.txt:9 -> Confirmations are minimal...",
+          "C:/Users/shivo/Projects/luma-agent/agent/voice_agent.py:100 -> Say exactly: 'Hi! I'm Lumi, your Luma event assistant. Let me get your email to get started.'",
+          "C:/Users/shivo/Projects/luma-agent/agent/voice_agent.py:136 -> Acknowledge this briefly and then call fetch_events..."
+        ]
+      },
+      "issues": "Manual dependency: full assertion requires runtime voice interaction; this run performed code-review-only validation and cannot confirm observed spoken brevity end-to-end."
+    },
+    {
+      "id": "VAL-SESSION-001",
+      "title": "Orb tap while connected does not clear events",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Inspect `handleOrbTap()` connected branch in `frontend/src/app/page.tsx`",
+          "expected": "No `setEvents([])` and no `setSidebarOpen(false)` when phase is `connected`",
+          "observed": "Connected branch only toggles mic via `setMicrophoneEnabled` and updates `isMuted` (`page.tsx:109-118`)."
+        },
+        {
+          "action": "Inspect where event/sidebar reset occurs",
+          "expected": "Reset behavior should be in an explicit end mechanism",
+          "observed": "`setSidebarOpen(false)` (`:125`) and `setEvents([])` (`:129`) are in `endSession()` (`:122-132`), not in `handleOrbTap()`."
+        }
+      ],
+      "evidence": {
+        "notes": [
+          "core-improvements/code-review-round2/code-review-evidence.md"
+        ],
+        "snippets": [
+          "C:/Users/shivo/Projects/luma-agent/frontend/src/app/page.tsx:109-120 -> handleOrbTap connected branch toggles microphone only",
+          "C:/Users/shivo/Projects/luma-agent/frontend/src/app/page.tsx:125 -> setSidebarOpen(false) in endSession",
+          "C:/Users/shivo/Projects/luma-agent/frontend/src/app/page.tsx:129 -> setEvents([]) in endSession"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-SESSION-002",
+      "title": "Orb tap while connected does not disconnect",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Inspect `handleOrbTap()` connected branch",
+          "expected": "No room disconnect call while connected",
+          "observed": "`handleOrbTap()` (`page.tsx:109-120`) toggles mic only; no `room.disconnect()` call is present in that branch."
+        },
+        {
+          "action": "Inspect explicit session end path",
+          "expected": "Disconnect occurs via dedicated end mechanism",
+          "observed": "`roomRef.current?.disconnect()` appears in `endSession()` (`page.tsx:123`), confirming separate explicit session end path."
+        }
+      ],
+      "evidence": {
+        "notes": [
+          "core-improvements/code-review-round2/code-review-evidence.md"
+        ],
+        "snippets": [
+          "C:/Users/shivo/Projects/luma-agent/frontend/src/app/page.tsx:109-120 -> handleOrbTap has no disconnect",
+          "C:/Users/shivo/Projects/luma-agent/frontend/src/app/page.tsx:123 -> roomRef.current?.disconnect() in endSession"
+        ]
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [
+    {
+      "description": "VAL-DIALOGUE-001 requires manual runtime voice interaction to confirm observed response brevity; this assignment's isolation was code-review only.",
+      "affectedAssertions": [
+        "VAL-DIALOGUE-001"
+      ],
+      "quickFixAttempted": "Completed code-review evidence collection (prompt + agent instruction inspection) and explicitly recorded manual dependency."
+    }
+  ],
+  "summary": "Tested 8 assigned assertions via code review: 7 passed, 0 failed, 1 blocked (VAL-DIALOGUE-001 manual runtime dependency)."
+}

@@ -1,0 +1,21 @@
+{
+  "featureId": "fix-audio-resume",
+  "reviewedAt": "2026-04-07T07:18:37.7860158Z",
+  "commitId": "8eaf94d",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The fix commit adds the missing audio resume path and now satisfies the prior blocking requirement: after orb-tap interrupt pauses audio, the next time agent speech starts, the audio element is explicitly resumed.",
+    "issues": []
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "Mission AGENTS.md still declares LiveKit audio playback edits in page.tsx as off-limits, but this fix feature explicitly requires exactly that change. This guidance conflict can mislead workers during implementation.",
+      "evidence": "C:\\Users\\shivo\\.factory\\missions\\af9a24ff-840a-4aac-9bc0-44a47301dd8f\\AGENTS.md:11 vs C:\\Users\\shivo\\.factory\\missions\\af9a24ff-840a-4aac-9bc0-44a47301dd8f\\features.json:176-177"
+    }
+  ],
+  "addressesFailureFrom": ".factory/validation/ux-fixes/scrutiny/reviews/orb-stops-speaking.json",
+  "summary": "Pass: this re-run adequately addresses the original orb-stops-speaking failure by adding a useEffect in page.tsx that calls play() when agentSpeaking becomes true, restoring subsequent utterance audio on the same subscribed track."
+}

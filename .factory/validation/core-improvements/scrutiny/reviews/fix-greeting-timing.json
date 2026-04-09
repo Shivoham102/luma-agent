@@ -1,0 +1,34 @@
+{
+  "featureId": "fix-greeting-timing",
+  "reviewedAt": "2026-04-07T06:27:08Z",
+  "commitId": "919fdc3",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The on_enter sequencing change is directionally correct (greeting is awaited before the email-tool instruction), but the same commit also rewrites the full system prompt and changes conversation flow beyond greeting timing.",
+    "issues": [
+      {
+        "file": "prompts/system_prompt.txt",
+        "line": 1,
+        "severity": "blocking",
+        "description": "This feature commit rewrites the entire prompt structure (Personality/Environment/Tone/Goal/Guardrails) instead of only fixing greeting timing. That introduces behavior changes outside this feature’s scope and conflicts with expectedBehavior: 'No change to the rest of the voice agent behavior.'"
+      },
+      {
+        "file": "prompts/system_prompt.txt",
+        "line": 14,
+        "severity": "blocking",
+        "description": "The updated flow alters downstream behavior (e.g., email handling and subsequent conversational instructions), which is not required for the timing fix and is a functional behavior change beyond the requested scope."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "The fullstack-worker skill lacks explicit guidance for isolating feature-specific hunks when starting from a dirty working tree, which can cause unrelated prompt/code changes to be bundled into a focused fix.",
+      "evidence": "Transcript skeleton (session f5f77710-71e2-419c-abb3-6717f56f2cb4) notes: 'I see the system prompt diff shows the full rewrite that was already in the working tree from a previous worker.' Commit 919fdc3 still includes a 38-line prompt rewrite in prompts/system_prompt.txt."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Fail: greeting timing logic is improved, but the commit includes broad prompt behavior changes outside the requested fix, so it does not satisfy the feature's no-additional-behavior-change expectation."
+}

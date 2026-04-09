@@ -1,0 +1,172 @@
+{
+  "groupId": "code-review",
+  "milestone": "core-improvements",
+  "testedAt": "2026-04-07T06:36:14.4450967Z",
+  "isolation": {
+    "mode": "read-only code review",
+    "guidanceSection": "Flow Validator Guidance: code-review",
+    "missionDir": "C:/Users/shivo/.factory/missions/af9a24ff-840a-4aac-9bc0-44a47301dd8f",
+    "repoRoot": "C:/Users/shivo/Projects/luma-agent"
+  },
+  "toolsUsed": [
+    "Read",
+    "Grep",
+    "Execute"
+  ],
+  "assertions": [
+    {
+      "id": "VAL-EVENTS-001",
+      "title": "Events fetched via matyascimbulka/luma-event-scraper",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Inspect agent/luma.py imports and actor configuration",
+          "expected": "apify-client import and matyascimbulka/luma-event-scraper actor usage",
+          "observed": "Found `from apify_client import ApifyClient` (line 5) and `self.actor_id = \"matyascimbulka/luma-event-scraper\"` (line 15)"
+        },
+        {
+          "action": "Search agent/luma.py for old actor id and httpx usage",
+          "expected": "No mhamas actor id and no httpx usage for Apify calls",
+          "observed": "No matches found for `mhamas/luma-calendar-events-scraper|httpx|LUMA_CALENDAR_SLUGS`"
+        }
+      ],
+      "evidence": {
+        "notes": [
+          "core-improvements/code-review/code-review-evidence.md"
+        ],
+        "snippets": [
+          "C:/Users/shivo/Projects/luma-agent/agent/luma.py:5",
+          "C:/Users/shivo/Projects/luma-agent/agent/luma.py:15"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-EVENTS-003",
+      "title": "New environment variables configure the scraper",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Inspect .env.example for scraper config variables",
+          "expected": "LUMA_EVENT_CATEGORIES and LUMA_CITIES present",
+          "observed": "Found `LUMA_EVENT_CATEGORIES=ai,tech` (line 7) and `LUMA_CITIES=San Francisco,New York` (line 8)"
+        },
+        {
+          "action": "Inspect agent/luma.py env var reads",
+          "expected": "Code reads LUMA_EVENT_CATEGORIES and LUMA_CITIES",
+          "observed": "Found os.getenv reads for LUMA_EVENT_CATEGORIES (line 18) and LUMA_CITIES (line 23)"
+        },
+        {
+          "action": "Search for removed legacy var in .env.example",
+          "expected": "LUMA_CALENDAR_SLUGS absent",
+          "observed": "No matches found for `LUMA_CALENDAR_SLUGS`"
+        }
+      ],
+      "evidence": {
+        "notes": [
+          "core-improvements/code-review/code-review-evidence.md"
+        ],
+        "snippets": [
+          "C:/Users/shivo/Projects/luma-agent/.env.example:7",
+          "C:/Users/shivo/Projects/luma-agent/.env.example:8",
+          "C:/Users/shivo/Projects/luma-agent/agent/luma.py:18",
+          "C:/Users/shivo/Projects/luma-agent/agent/luma.py:23"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-EVENTS-004",
+      "title": "apify-client added to requirements.txt",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Inspect requirements.txt dependency list",
+          "expected": "apify-client listed",
+          "observed": "Found `apify-client>=1.8.0` at line 11"
+        },
+        {
+          "action": "Verify apify_client import in project venv",
+          "expected": "Import succeeds",
+          "observed": "Command output `apify_client_import_ok` with exit code 0"
+        }
+      ],
+      "evidence": {
+        "notes": [
+          "core-improvements/code-review/code-review-evidence.md"
+        ],
+        "snippets": [
+          "C:/Users/shivo/Projects/luma-agent/requirements.txt:11"
+        ],
+        "command": "& \"C:/Users/shivo/Projects/luma-agent/venv/Scripts/python.exe\" -c \"import apify_client; print('apify_client_import_ok')\""
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-README-001",
+      "title": "README reflects actual technology stack",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Inspect README architecture/stack sections",
+          "expected": "Mentions LiveKit Agents, OpenAI TTS, Deepgram STT, Silero VAD, Apify actor, Next.js frontend with livekit-client, FastAPI backend",
+          "observed": "All required stack elements are present in architecture and table sections"
+        },
+        {
+          "action": "Search README for stale references",
+          "expected": "No ElevenLabs, email_parser.py, or conversation state machine mentions",
+          "observed": "No matches found for `ElevenLabs|email_parser.py|conversation state machine`"
+        }
+      ],
+      "evidence": {
+        "notes": [
+          "core-improvements/code-review/code-review-evidence.md"
+        ],
+        "snippets": [
+          "C:/Users/shivo/Projects/luma-agent/README.md:21",
+          "C:/Users/shivo/Projects/luma-agent/README.md:22",
+          "C:/Users/shivo/Projects/luma-agent/README.md:23",
+          "C:/Users/shivo/Projects/luma-agent/README.md:25",
+          "C:/Users/shivo/Projects/luma-agent/README.md:40",
+          "C:/Users/shivo/Projects/luma-agent/README.md:42"
+        ]
+      },
+      "issues": null
+    },
+    {
+      "id": "VAL-README-002",
+      "title": "README includes setup and run instructions",
+      "status": "pass",
+      "steps": [
+        {
+          "action": "Inspect README setup/configuration sections",
+          "expected": "Python and Node install steps plus env var configuration",
+          "observed": "Found setup sections for Python dependencies, frontend dependencies, and environment variables"
+        },
+        {
+          "action": "Inspect README run/usage sections",
+          "expected": "Instructions for FastAPI, voice agent, frontend, and usage",
+          "observed": "Found terminal run sections for FastAPI, voice agent, Next.js frontend, and usage instructions"
+        }
+      ],
+      "evidence": {
+        "notes": [
+          "core-improvements/code-review/code-review-evidence.md"
+        ],
+        "snippets": [
+          "C:/Users/shivo/Projects/luma-agent/README.md:93",
+          "C:/Users/shivo/Projects/luma-agent/README.md:113",
+          "C:/Users/shivo/Projects/luma-agent/README.md:123",
+          "C:/Users/shivo/Projects/luma-agent/README.md:145",
+          "C:/Users/shivo/Projects/luma-agent/README.md:152",
+          "C:/Users/shivo/Projects/luma-agent/README.md:159",
+          "C:/Users/shivo/Projects/luma-agent/README.md:168"
+        ]
+      },
+      "issues": null
+    }
+  ],
+  "frictions": [],
+  "blockers": [],
+  "summary": "Validated 5 assigned assertions by read-only code review: 5 passed, 0 failed, 0 blocked."
+}

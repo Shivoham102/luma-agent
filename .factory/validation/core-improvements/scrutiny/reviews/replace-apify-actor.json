@@ -1,0 +1,15 @@
+{
+  "featureId": "replace-apify-actor",
+  "reviewedAt": "2026-04-07T06:26:00.559623+00:00",
+  "commitId": "aaf824c",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "Commit aaf824c implements the feature requirements end-to-end: `agent/luma.py` now uses `apify-client` with actor `matyascimbulka/luma-event-scraper`, wraps synchronous SDK calls with `asyncio.to_thread`, reads `LUMA_EVENT_CATEGORIES` and `LUMA_CITIES`, and normalizes output to the expected frontend event shape. `.env.example` replaces `LUMA_CALENDAR_SLUGS` with the new variables, and `requirements.txt` includes `apify-client`.",
+    "issues": []
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": null,
+  "summary": "Pass. The reviewed diff and transcript skeleton for replace-apify-actor are consistent with the feature description and expected behavior, and no blocking or non-blocking defects were identified."
+}
