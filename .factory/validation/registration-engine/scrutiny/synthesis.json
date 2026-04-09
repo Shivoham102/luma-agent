@@ -1,0 +1,69 @@
+{
+  "milestone": "registration-engine",
+  "round": 1,
+  "status": "fail",
+  "validatorsRun": {
+    "test": {
+      "passed": true,
+      "command": "C:\\Users\\shivo\\Projects\\luma-agent\\venv\\Scripts\\python.exe -m pytest C:\\Users\\shivo\\Projects\\luma-agent -v --tb=short -x",
+      "exitCode": 0
+    },
+    "typecheck": {
+      "passed": true,
+      "command": "cd C:\\Users\\shivo\\Projects\\luma-agent\\frontend; npx tsc --noEmit",
+      "exitCode": 0
+    },
+    "lint": {
+      "passed": true,
+      "command": "cd C:\\Users\\shivo\\Projects\\luma-agent\\frontend; npm run lint",
+      "exitCode": 0
+    }
+  },
+  "reviewsSummary": {
+    "total": 2,
+    "passed": 0,
+    "failed": 2,
+    "failedFeatures": [
+      "registration-engine-core",
+      "registration-api-endpoint"
+    ]
+  },
+  "blockingIssues": [
+    {
+      "featureId": "registration-engine-core",
+      "severity": "blocking",
+      "description": "Session re-login occurs in a temporary context, but registration continues on the original context/page, so expired-session recovery can still proceed unauthenticated."
+    },
+    {
+      "featureId": "registration-engine-core",
+      "severity": "blocking",
+      "description": "Unknown-field detection treats almost all unmatched visible inputs as required (`if is_required or field_type != \"hidden\"`), causing optional custom fields to incorrectly block registration."
+    },
+    {
+      "featureId": "registration-api-endpoint",
+      "severity": "blocking",
+      "description": "Voice-agent `register_event` depends on an inbound `auth_token` message that the current frontend flow does not emit, so `/api/register` cannot be reliably called in the shipped flow."
+    },
+    {
+      "featureId": "registration-api-endpoint",
+      "severity": "blocking",
+      "description": "For API HTTP 401/400/non-200 responses, `register_event` returns without sending a terminal registration result message to the frontend data channel."
+    }
+  ],
+  "appliedUpdates": [],
+  "suggestedGuidanceUpdates": [
+    {
+      "target": "AGENTS.md",
+      "suggestion": "Add a protocol consistency checklist requirement: when adding/changing any data-channel message type or payload keys, update both producer/consumer implementations in the same feature and verify the key names match the contract.",
+      "evidence": "registration-api-endpoint review found contract drift (`event_id` in mission guidance vs `event_url` in implementation) and an undocumented `auth_token` dependency not emitted by frontend flow.",
+      "isSystemic": false
+    }
+  ],
+  "rejectedObservations": [
+    {
+      "observation": "A new inbound `auth_token` message type was introduced but not reflected in shared protocol docs.",
+      "reason": "implementation-fix-preferred: this is primarily a blocking product bug in current flow and should be addressed in code before adopting as shared guidance"
+    }
+  ],
+  "previousRound": null
+}

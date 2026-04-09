@@ -1,0 +1,28 @@
+{
+  "featureId": "registration-engine-core",
+  "reviewedAt": "2026-04-09T02:45:47.995003+00:00",
+  "commitId": "22ae245",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The feature implements most requested registration-engine structure, but two blocking correctness issues break key requirements around session re-login behavior and custom-field handling.",
+    "issues": [
+      {
+        "file": "agent/registration.py",
+        "line": 300,
+        "severity": "blocking",
+        "description": "When session validation fails, `_ensure_logged_in()` calls `login_to_luma()` in a separate temporary browser context and returns True, but `register_for_event()` continues using the original context/page created earlier (line 707). The active page is never reloaded with the new storage state, so the attempt can proceed unauthenticated after an expired/missing cached session. This breaks the expected re-login-and-continue flow (VAL-REG-005/VAL-REG-007)."
+      },
+      {
+        "file": "agent/registration.py",
+        "line": 547,
+        "severity": "blocking",
+        "description": "Unknown-field detection marks virtually every unmatched visible input as blocking because of `if is_required or field_type != \"hidden\"`. Since visible fields are almost never `hidden`, optional custom fields are treated as required and force `needs_input`. Requirement is to block only when required unknown fields exist (VAL-REG-010)."
+      }
+    ]
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": null,
+  "summary": "Fail. Two blocking logic defects were found: re-login does not rebind the active registration context after session expiry, and optional unknown form fields are incorrectly treated as required, causing unnecessary `needs_input` failures."
+}

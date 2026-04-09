@@ -1,0 +1,39 @@
+{
+  "featureId": "registration-api-endpoint",
+  "reviewedAt": "2026-04-09T02:46:33.494645+00:00",
+  "commitId": "bb8838b",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "fail",
+  "codeReview": {
+    "summary": "The new /api/register endpoint correctly enforces JWT auth and required-body validation (covers VAL-REG-001 and VAL-REG-002), but the voice-agent integration is not fully functional and misses required data-channel result handling in key paths.",
+    "issues": [
+      {
+        "file": "agent/voice_agent.py",
+        "line": 81,
+        "severity": "blocking",
+        "description": "register_event depends on a JWT from user_tokens[room_name] and exits early when missing, but the frontend never sends the required `auth_token` data-channel message (frontend/src/app/page.tsx only publishes `{type: \"email\"}` at line 188). In the shipped flow, register_event cannot reliably call POST /api/register, so the expected behavior \"Voice agent register_event tool calls /api/register endpoint\" is not met."
+      },
+      {
+        "file": "agent/voice_agent.py",
+        "line": 107,
+        "severity": "blocking",
+        "description": "For backend HTTP responses 401/400/non-200 (lines 107, 113, 119), the function returns immediately without publishing a terminal registration result to the frontend data channel. This violates the feature requirement that the voice agent send registration results to the frontend and can leave UI state without a final failed status."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "Data-channel contract mismatch: mission AGENTS.md defines registration_progress payload key as `event_id`, but implementation sends `event_url`.",
+      "evidence": "C:\\Users\\shivo\\.factory\\missions\\8f439666-48e5-4b72-a1e1-56c84448708e\\AGENTS.md:68 expects `event_id`; agent/voice_agent.py:94,133,155,175,189 sends `event_url`."
+    },
+    {
+      "area": "knowledge",
+      "observation": "A new inbound `auth_token` message type was introduced in voice_agent but is not reflected in shared protocol docs and not emitted by the current frontend implementation.",
+      "evidence": "agent/voice_agent.py:251 reads `msg.get(\"type\") == \"auth_token\"`; frontend/src/app/page.tsx:188 only publishes `{ type: \"email\", email }`; architecture/docs list message types without `auth_token`."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Review result: FAIL. /api/register endpoint behavior for auth and required-field validation is implemented, but voice-agent integration has blocking gaps: missing token wiring in the real frontend flow and missing terminal data-channel result messages for several failure responses."
+}
