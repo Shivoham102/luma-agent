@@ -1,0 +1,26 @@
+{
+  "featureId": "fix-dotenv-import-order",
+  "reviewedAt": "2026-04-09T02:01:17.050880Z",
+  "commitId": "db9f9f2",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The fix adequately resolves the prior blocking startup regression. `main.py` now loads dotenv before importing `agent.auth`, and JWT/Fernet secret resolution in `agent/auth.py` is lazy at call time, so importing `agent.auth` no longer fails when `JWT_SECRET_KEY` is not pre-exported.",
+    "issues": []
+  },
+  "sharedStateObservations": [
+    {
+      "area": "knowledge",
+      "observation": "Shared environment docs are stale after this fix: they still describe JWT secret usage as import-time and requiring pre-import availability.",
+      "evidence": ".factory/library/environment.md:20 says `JWT_SECRET_KEY` is used by `agent/auth.py (import-time)` and must be available before importing auth, but `agent/auth.py:25` now uses lazy `_get_jwt_secret()` and `main.py:7` loads dotenv before `from agent.auth ...` at `main.py:15`."
+    },
+    {
+      "area": "conventions",
+      "observation": "Mission coding convention and implemented bootstrap pattern are now in tension; an explicit exception for early dotenv bootstrap would reduce ambiguity.",
+      "evidence": "Mission AGENTS.md:29 requires all imports grouped at top, while `main.py` intentionally executes `load_dotenv()` at line 7 before later imports to satisfy auth secret initialization ordering."
+    }
+  ],
+  "addressesFailureFrom": ".factory/validation/auth/scrutiny/reviews/fix-jwt-default-secret.json",
+  "summary": "Fix review passed. The commit directly addresses the original failure from `fix-jwt-default-secret` by eliminating import-time JWT secret enforcement and ensuring dotenv is loaded before auth import, with no new blocking issues found."
+}

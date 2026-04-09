@@ -1,7 +1,7 @@
 {
   "milestone": "auth",
-  "round": 2,
-  "status": "fail",
+  "round": 3,
+  "status": "pass",
   "validatorsRun": {
     "test": {
       "passed": true,
@@ -21,34 +21,26 @@
   },
   "reviewsSummary": {
     "total": 1,
-    "passed": 0,
-    "failed": 1,
-    "failedFeatures": [
-      "fix-jwt-default-secret"
-    ]
+    "passed": 1,
+    "failed": 0,
+    "failedFeatures": []
   },
-  "blockingIssues": [
-    {
-      "featureId": "fix-jwt-default-secret",
-      "severity": "blocking",
-      "description": "main.py imports agent.auth before load_dotenv(), so strict JWT_SECRET_KEY enforcement in agent/auth.py can raise at import time before .env is loaded unless the secret is pre-exported."
-    }
-  ],
+  "blockingIssues": [],
   "appliedUpdates": [
     {
       "target": "library",
-      "description": "Updated .factory/library/environment.md to document that JWT_SECRET_KEY is required at agent/auth.py import time and must be available before auth import.",
-      "sourceFeature": "fix-jwt-default-secret"
+      "description": "Updated .factory/library/environment.md to reflect lazy/runtime JWT secret resolution and dotenv-first bootstrap behavior.",
+      "sourceFeature": "fix-dotenv-import-order"
     }
   ],
   "suggestedGuidanceUpdates": [
     {
-      "target": "skill:fullstack-worker",
-      "suggestion": "When agent-browser is unavailable per mission AGENTS.md, permit explicit fallback UI validation steps (typecheck/lint/API checks) without treating missing browser automation as procedure deviation.",
-      "evidence": "Review observation: fullstack-worker skill mandates agent-browser UI verification, while mission AGENTS.md documents a known agent-browser outage and fallback expectations.",
-      "isSystemic": true
+      "target": "AGENTS.md",
+      "suggestion": "Add an explicit exception to the import-order convention allowing early `load_dotenv()` bootstrap when required to satisfy secure runtime initialization dependencies.",
+      "evidence": "fix-dotenv-import-order intentionally places dotenv bootstrap before grouped imports in main.py to satisfy auth secret initialization order while keeping startup safe.",
+      "isSystemic": false
     }
   ],
   "rejectedObservations": [],
-  "previousRound": ".factory/validation/auth/scrutiny/synthesis.round1.json"
+  "previousRound": ".factory/validation/auth/scrutiny/synthesis.round2.json"
 }
