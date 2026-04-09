@@ -17,7 +17,7 @@ Environment variables, external dependencies, and setup notes.
 | OPENAI_API_KEY | voice_agent.py | Yes | For GPT-4o-mini LLM and TTS |
 | DEEPGRAM_API_KEY | voice_agent.py | Yes | For speech-to-text |
 | APIFY_API_TOKEN | luma.py | Yes | For event scraping via Apify |
-| JWT_SECRET_KEY | main.py | Yes (NEW) | Secret key for JWT token signing |
+| JWT_SECRET_KEY | agent/auth.py (import-time), main.py | Yes (NEW) | Secret key for JWT token signing; must be available before importing auth module |
 | LUMA_EVENT_CATEGORIES | luma.py | No | Default: "ai,tech" |
 | LUMA_CITIES | luma.py | No | Default: "San Francisco" |
 | MEM0_API_KEY | memory.py | No | Optional mem0 integration |
